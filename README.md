@@ -2,7 +2,7 @@
 
 A standalone college football scoreboard for **ACC** and **AP Top 25** games, built as a single-page app (no build step). It talks directly to the ESPN college football scoreboard API.
 
-Styled as a **Glance-style LED matrix**, with the primary layout targeting an **iPhone** (393×852 / 430×932 portrait, and 852×393 landscape). Portrait stacks the away and home teams with large LED scores, a status strip, and a scrolling ticker at the bottom. Landscape keeps a compact 3-column board. The display fills the screen in standalone / Add to Home Screen mode (`viewport-fit=cover`, `100dvh`, safe-area insets, black-translucent status bar). Swipe left or right to change games; tap to show or hide controls. Wider screens, including **1920×720 (8:3)**, keep the three-column spotlight (away left, scores center, home right). Controls auto-hide so the display reads like a real sign.
+Styled as a **Glance-style LED matrix**, with the primary layout targeting an **iPhone** (393×852 / 430×932 portrait, and 852×393 landscape). Portrait stacks the away and home teams with large LED scores, a status strip, and a scrolling ticker at the bottom. Landscape keeps a compact 3-column board. Type, scores, and logos are drawn as crisp round LED dots on a canvas at the device pixel ratio so they stay sharp on a 3× iPhone. The display fills the screen in standalone / Add to Home Screen mode (`viewport-fit=cover`, `100dvh`, safe-area insets, black-translucent status bar). Swipe left or right to change games; tap to show or hide controls. Wider screens, including **1920×720 (8:3)**, keep the three-column spotlight (away left, scores center, home right). Controls auto-hide so the display reads like a real sign.
 
 ## Open locally
 

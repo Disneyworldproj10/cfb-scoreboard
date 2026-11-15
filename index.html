@@ -501,15 +501,15 @@
       padding: clamp(8px, 1.6vh, 28px) clamp(14px, 3vw, 48px) clamp(8px, 1.4vh, 20px);
       gap: clamp(6px, 1.2vh, 16px);
     }
-    .spotlight-stage.anim-next .spot { animation: spotInNext 0.5s ease; }
-    .spotlight-stage.anim-prev .spot { animation: spotInPrev 0.5s ease; }
+    .spotlight-stage.anim-next .spot { animation: spotInNext 0.5s ease both; }
+    .spotlight-stage.anim-prev .spot { animation: spotInPrev 0.5s ease both; }
     @keyframes spotInNext {
       from { opacity: 0; transform: translateX(48px); }
-      to { opacity: 1; transform: translateX(0); }
+      to { opacity: 1; transform: none; }
     }
     @keyframes spotInPrev {
       from { opacity: 0; transform: translateX(-48px); }
-      to { opacity: 1; transform: translateX(0); }
+      to { opacity: 1; transform: none; }
     }
     .spot-top {
       display: flex;
@@ -774,13 +774,13 @@
       z-index: 2;
       text-align: center;
       padding: 12px 20px;
-      animation: alertPop 0.7s cubic-bezier(0.22, 1.55, 0.36, 1) both;
+      animation: alertPop 0.7s cubic-bezier(0.22, 1.55, 0.36, 1) forwards;
     }
     @keyframes alertPop {
       0% { transform: scale(0.35) rotate(-6deg); opacity: 0; }
       58% { transform: scale(1.14) rotate(1.2deg); opacity: 1; }
       76% { transform: scale(0.95) rotate(-0.4deg); }
-      100% { transform: scale(1) rotate(0deg); }
+      100% { transform: none; opacity: 1; }
     }
     .score-alert.is-out .alert-inner {
       animation: alertOut 0.55s ease-in forwards;
@@ -818,8 +818,8 @@
       animation: alertPulse 1.05s 0.65s ease-in-out infinite;
     }
     @keyframes alertPulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.045); }
+      0%, 100% { transform: none; }
+      50% { transform: none; }
     }
     .alert-team {
       margin-top: 16px;
@@ -1100,19 +1100,12 @@
       position: absolute;
       inset: 0;
       pointer-events: none;
-      z-index: 8;
-      /* Coarse LED punch: most of each cell stays lit so type stays readable,
-         with a faint unlit bead in empty areas of the black panel. */
-      background-image:
-        radial-gradient(circle at center, transparent 3.15px, #000 3.55px),
-        radial-gradient(circle at center, #202020 1.15px, transparent 1.4px),
-        repeating-linear-gradient(
-          to bottom,
-          rgba(255,255,255,0) 0 9px,
-          rgba(0,0,0,0.12) 9px 10px
-        );
-      background-size: var(--led-pitch) var(--led-pitch), var(--led-pitch) var(--led-pitch), 100% 10px;
-      background-position: 0 0, 0 0, 0 0;
+      z-index: 0;
+      /* Faint unlit beads on the black panel only — never punched over text. */
+      background-image: radial-gradient(circle at center, #1c1c1c 1px, transparent 1.25px);
+      background-size: var(--led-pitch) var(--led-pitch);
+      background-position: 0 0;
+      opacity: 0.85;
     }
     .spotlight-shell,
     #grid-view {
@@ -1132,18 +1125,17 @@
       background: #000;
       overflow: hidden;
     }
-    body.led .spotlight-stage,
-    body.led .led-ticker,
-    body.led .alert-inner,
     body.led .led-abbr,
     body.led .spot-score,
+    body.led .spot-score-inline,
     body.led .spot-clock,
     body.led .badge,
-    body.led .alert-label {
-      text-shadow:
-        0 0 4px currentColor,
-        0 0 10px currentColor,
-        0 0 22px currentColor;
+    body.led .alert-label,
+    body.led .alert-team,
+    body.led .led-ticker-copy {
+      text-shadow: 0 0 2px currentColor;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
     }
 
     body.led .spot {
@@ -1153,7 +1145,7 @@
     body.led .spot-top { min-height: 24px; }
     body.led .badge {
       font-family: "Press Start 2P", "Silkscreen", monospace;
-      font-size: clamp(0.55rem, 1.8vh, 0.85rem);
+      font-size: 16px;
       border-radius: 0;
       background: transparent;
       border: 0;
@@ -1173,7 +1165,7 @@
     body.led .badge.upcoming { color: var(--led-cyan); background: transparent; }
     body.led .spot-clock {
       font-family: "Press Start 2P", "Silkscreen", monospace;
-      font-size: clamp(0.8rem, 3vh, 1.35rem);
+      font-size: 16px;
       color: var(--led-white);
       letter-spacing: 0.06em;
     }
@@ -1185,7 +1177,7 @@
     body.led .network,
     body.led .spot-tags {
       font-family: "VT323", monospace;
-      font-size: clamp(1.15rem, 3.6vh, 1.75rem);
+      font-size: 24px;
       color: var(--led-amber);
       background: none;
       border: 0;
@@ -1194,34 +1186,29 @@
     body.led .network { color: var(--led-cyan); letter-spacing: 0.12em; }
 
 
-    body.led .spot-team img.led-logo,
-    body.led #alert-logo {
-      -webkit-mask-image: radial-gradient(circle at center, #000 55%, transparent 62%);
-      -webkit-mask-size: 6px 6px;
-      -webkit-mask-repeat: repeat;
-      mask-image: radial-gradient(circle at center, #000 55%, transparent 62%);
-      mask-size: 6px 6px;
-      mask-repeat: repeat;
-    }
     body.led .spot-team img,
-    body.led .alert-logo {
-      image-rendering: pixelated;
-      image-rendering: crisp-edges;
-      filter: contrast(1.25) saturate(1.35) brightness(1.05);
-      width: clamp(64px, 22vh, 180px);
-      height: clamp(64px, 22vh, 180px);
+    body.led .spot-team img.led-logo,
+    body.led .alert-logo,
+    body.led #alert-logo {
+      image-rendering: auto;
+      image-rendering: -webkit-optimize-contrast;
+      filter: none;
+      -webkit-mask-image: none;
+      mask-image: none;
+      width: 160px;
+      height: 160px;
     }
     body.led .led-abbr {
       font-family: "Press Start 2P", "Silkscreen", monospace;
-      font-size: clamp(1.35rem, 6.6vh, 3.6rem);
+      font-size: 40px;
       line-height: 1.15;
       color: var(--led, var(--led-amber));
       letter-spacing: 0.08em;
-      filter: brightness(1.15);
+      filter: none;
     }
     body.led .spot-name {
       font-family: "VT323", monospace;
-      font-size: clamp(0.9rem, 2.4vh, 1.3rem);
+      font-size: 16px;
       color: #9a9a9a;
       text-shadow: none;
       letter-spacing: 0.08em;
@@ -1246,14 +1233,14 @@
     }
     body.led .spot-score {
       font-family: "Press Start 2P", "Silkscreen", monospace;
-      font-size: clamp(2.8rem, 18vh, 7.6rem);
+      font-size: 96px;
       color: var(--led-white);
-      letter-spacing: 0.04em;
+      letter-spacing: 0;
       line-height: 1;
-      filter: brightness(1.2);
+      filter: none;
     }
     body.led .spot-score.blank { color: #333; text-shadow: none; }
-    body.led .spot-score.loser { color: #888; text-shadow: 0 0 6px #666; }
+    body.led .spot-score.loser { color: #888; text-shadow: none; }
     body.led .spot-score.winner { color: var(--led-white); }
     body.led .spot-dash { color: #444; font-family: "Press Start 2P", monospace; text-shadow: none; }
     body.led .spot-score-inline {
@@ -1287,7 +1274,7 @@
       padding-right: 5rem;
       white-space: nowrap;
       font-family: "Press Start 2P", "Silkscreen", monospace;
-      font-size: clamp(12px, 3.1vh, 22px);
+      font-size: 16px;
       line-height: 1.2;
       color: var(--led-amber);
       letter-spacing: 0.04em;
@@ -1353,7 +1340,8 @@
     body.led #grid-view .badge {
       font-family: "Press Start 2P", "VT323", monospace;
     }
-    body.led #grid-view .card img { image-rendering: pixelated; }
+    body.led #grid-view .card img { image-rendering: auto; filter: none; }
+    body.led #grid-view .led-logo-cv { width: 36px; height: 36px; }
 
     /* TOUCHDOWN / FG LED marquee */
     body.led .score-alert {
@@ -1411,42 +1399,44 @@
     body.led .alert-label {
       font-family: "Press Start 2P", "Silkscreen", monospace;
       color: var(--led-green);
-      font-size: clamp(1.8rem, 10vh, 5.6rem);
+      font-size: 48px;
       letter-spacing: 0.08em;
-      text-shadow: 0 0 8px var(--led-green), 0 0 24px var(--led-green), 0 0 48px var(--led-green);
+      text-shadow: 0 0 2px var(--led-green);
       animation: ledTdFlash 0.45s steps(1, end) infinite, ledMarqueeIn 0.55s steps(8, end);
       margin: 0;
       line-height: 1.15;
+      filter: none;
     }
     @keyframes ledTdFlash {
-      0%, 55% { opacity: 1; filter: brightness(1.25); }
-      56%, 100% { opacity: 0.55; filter: brightness(0.85); }
+      0%, 55% { opacity: 1; }
+      56%, 100% { opacity: 0.7; }
     }
     body.led .score-alert[data-kind="FIELD GOAL"] .alert-label {
       color: var(--led-amber);
-      text-shadow: 0 0 8px var(--led-amber), 0 0 24px var(--led-amber);
+      text-shadow: 0 0 2px var(--led-amber);
     }
     body.led .score-alert[data-kind="SAFETY"] .alert-label {
       color: var(--led-red);
-      text-shadow: 0 0 8px var(--led-red), 0 0 24px var(--led-red);
+      text-shadow: 0 0 2px var(--led-red);
     }
     body.led .score-alert[data-kind="SCORE!"] .alert-label,
     body.led .score-alert[data-kind="EXTRA POINT"] .alert-label,
     body.led .score-alert[data-kind="2-PT CONVERSION"] .alert-label {
       color: var(--led-white);
-      text-shadow: 0 0 8px #fff, 0 0 24px #fff;
+      text-shadow: 0 0 2px #fff;
     }
     @keyframes ledMarqueeIn {
       from { transform: translateX(40%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+      to { transform: none; opacity: 1; }
     }
     body.led .alert-team {
       font-family: "Press Start 2P", "Silkscreen", monospace;
       color: var(--alert-a, var(--led-white));
       letter-spacing: 0.16em;
-      text-shadow: 0 0 8px currentColor, 0 0 18px currentColor;
+      text-shadow: 0 0 2px currentColor;
       margin-top: 12px;
-      font-size: clamp(0.9rem, 4vh, 1.8rem);
+      font-size: 16px;
+      filter: none;
     }
     body.led .score-alert.is-out .alert-inner {
       animation: none;
@@ -1501,7 +1491,7 @@
         flex-shrink: 0;
       }
       body.led .led-ticker-copy {
-        font-size: clamp(11px, 3.4vw, 16px);
+        font-size: 16px;
       }
       body.led .spot {
         padding: 6px 8px 4px;
@@ -1519,15 +1509,15 @@
         min-width: 0;
       }
       body.led .badge {
-        font-size: clamp(0.55rem, 3.2vw, 0.75rem);
+        font-size: 8px;
       }
       body.led .spot-clock {
-        font-size: clamp(0.7rem, 3.8vw, 0.95rem);
+        font-size: 16px;
       }
       body.led .spot-situation,
       body.led .network,
       body.led .spot-tags {
-        font-size: clamp(0.95rem, 4.2vw, 1.2rem);
+        font-size: 20px;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1559,30 +1549,30 @@
       body.led .spot-team img,
       body.led .spot-team img.led-logo {
         grid-area: logo;
-        width: clamp(80px, 22vw, 128px);
-        height: clamp(80px, 22vw, 128px);
+        width: 96px;
+        height: 96px;
       }
       body.led .led-abbr {
         grid-area: abbr;
-        font-size: clamp(1.15rem, 6.4vw, 1.85rem);
+        font-size: 24px;
         min-width: 0;
       }
       body.led .spot-name {
         grid-area: name;
-        font-size: clamp(0.85rem, 3.4vw, 1.1rem);
+        font-size: 16px;
         color: #8a8a8a;
       }
       body.led .spot-team .spot-score-inline {
         display: block;
         grid-area: score;
         font-family: "Press Start 2P", "Silkscreen", monospace;
-        font-size: clamp(2.5rem, 15vw, 4.2rem);
+        font-size: 64px;
         font-weight: 400;
         line-height: 1;
         color: var(--led-white);
-        letter-spacing: 0.04em;
-        text-shadow: 0 0 4px currentColor, 0 0 10px currentColor, 0 0 22px currentColor;
-        filter: brightness(1.2);
+        letter-spacing: 0;
+        text-shadow: 0 0 2px currentColor;
+        filter: none;
       }
       body.led .spot-score-inline.blank { color: #333; text-shadow: none; }
 
@@ -1603,27 +1593,27 @@
       }
       body.led .alert-copy { align-items: center; max-width: 100%; }
       body.led .alert-label {
-        font-size: clamp(1.05rem, 7.2vw, 1.85rem);
+        font-size: 24px;
         letter-spacing: 0.04em;
         white-space: nowrap;
         max-width: 100%;
       }
       body.led .score-alert[data-kind="FIELD GOAL"] .alert-label,
       body.led .score-alert[data-kind="EXTRA POINT"] .alert-label {
-        font-size: clamp(0.95rem, 6.6vw, 1.65rem);
+        font-size: 24px;
       }
       body.led .score-alert[data-kind="2-PT CONVERSION"] .alert-label {
-        font-size: clamp(0.72rem, 5.2vw, 1.2rem);
-        letter-spacing: 0.02em;
+        font-size: 16px;
+        letter-spacing: 0;
       }
       body.led .alert-logo,
       body.led #alert-logo {
-        width: min(34vw, 160px);
-        height: min(34vw, 160px);
+        width: 128px;
+        height: 128px;
       }
       body.led .alert-team {
         margin-top: 4px;
-        font-size: clamp(0.85rem, 5vw, 1.25rem);
+        font-size: 16px;
       }
 
       /* Large, tappable, auto-hiding chrome */
@@ -1672,14 +1662,14 @@
         box-shadow: inset 0 0 0 3px #141414, inset 0 0 0 4px #2a2a2a;
       }
       body.led .led-ticker { height: var(--ticker-h); }
-      body.led .led-ticker-copy { font-size: 12px; }
+      body.led .led-ticker-copy { font-size: 16px; }
       body.led .spot { padding: 2px 8px 2px; gap: 2px; }
       body.led .spot-top { min-height: 0; gap: 6px; }
-      body.led .badge { font-size: 0.55rem; }
-      body.led .spot-clock { font-size: 0.7rem; }
+      body.led .badge { font-size: 8px; }
+      body.led .spot-clock { font-size: 16px; }
       body.led .spot-situation,
       body.led .network,
-      body.led .spot-tags { font-size: 0.95rem; }
+      body.led .spot-tags { font-size: 16px; }
       body.led .spot-scores { display: flex !important; }
       body.led .spot-score-inline { display: none !important; }
       body.led .spot-teams {
@@ -1702,17 +1692,17 @@
       }
       body.led .spot-team img,
       body.led .spot-team img.led-logo {
-        width: clamp(44px, 22vh, 68px) !important;
-        height: clamp(44px, 22vh, 68px) !important;
+        width: 64px !important;
+        height: 64px !important;
         grid-area: auto;
       }
       body.led .led-abbr {
-        font-size: clamp(0.8rem, 5.5vh, 1.25rem);
+        font-size: 16px;
         grid-area: auto;
       }
       body.led .spot-name { display: none; }
       body.led .spot-score {
-        font-size: clamp(1.8rem, 22vh, 3.4rem);
+        font-size: 48px;
       }
       body.led .score-alert {
         padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
@@ -1725,19 +1715,19 @@
         text-align: left;
       }
       body.led .alert-label {
-        font-size: clamp(1.1rem, 9vh, 2.2rem);
+        font-size: 24px;
         letter-spacing: 0.04em;
         white-space: nowrap;
       }
       body.led .score-alert[data-kind="2-PT CONVERSION"] .alert-label {
-        font-size: clamp(0.8rem, 6.5vh, 1.4rem);
+        font-size: 16px;
       }
       body.led .alert-logo,
       body.led #alert-logo {
-        width: min(22vh, 96px);
-        height: min(22vh, 96px);
+        width: 80px;
+        height: 80px;
       }
-      body.led .alert-team { margin-top: 4px; font-size: clamp(0.7rem, 4vh, 1rem); }
+      body.led .alert-team { margin-top: 4px; font-size: 16px; }
       body.led .topbar {
         top: max(4px, env(safe-area-inset-top, 0px));
         left: max(8px, env(safe-area-inset-left, 0px));
@@ -1778,10 +1768,83 @@
     body.led .wrap { position: relative; display: flex; flex-direction: column; overflow: hidden; }
     html, body.led { overflow: hidden; }
 
-    body.led .wrap > .cabinet-grid { z-index: 8; border-radius: 0; }
+    body.led .wrap > .cabinet-grid { z-index: 0; border-radius: 0; }
     body.led #board { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; }
     body.led.view-grid #grid-view { flex: 1; min-height: 0; overflow: auto; position: relative; z-index: 1; }
     body.led .led-ticker { z-index: 2; }
+
+    .vh {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+    canvas.led-text-cv,
+    canvas.led-logo-cv,
+    #ticker-canvas {
+      display: block;
+      image-rendering: auto;
+      background: transparent;
+    }
+    #ticker-canvas { width: 100%; height: 100%; }
+    body.led .led-logo-cv {
+      width: 160px;
+      height: 160px;
+      flex-shrink: 0;
+      align-self: center;
+    }
+    body.led .led-size-label { height: 24px; width: auto; max-width: 100%; align-self: center; }
+    body.led .led-size-score { height: 96px; align-self: center; }
+    body.led .led-size-status { width: 100%; height: 16px; }
+    body.led .led-size-alert { height: 40px; }
+    body.led .spot-top { width: 100%; }
+    body.led .spot-scores .led-size-score { height: 96px; }
+    body.led .spot-dash-cv { width: 32px; height: 96px; }
+    @media (min-width: 701px) {
+      body.led .led-score-inline { display: none !important; }
+    }
+
+
+    @media (max-width: 700px) and (max-aspect-ratio: 3/4) {
+      body.led .led-logo-cv {
+        grid-area: logo;
+        width: 96px !important;
+        height: 96px !important;
+      }
+      body.led .led-size-label {
+        grid-area: abbr;
+        height: 24px !important;
+        width: auto;
+        max-width: 100%;
+      }
+      body.led .led-size-score.led-score-inline {
+        grid-area: score;
+        height: 64px !important;
+      }
+      body.led .led-size-status { height: 16px !important; }
+      body.led .spot-name,
+      body.led .spot-meta { display: none; }
+    }
+
+    @media (max-height: 500px) and (min-aspect-ratio: 1.6/1) {
+      body.led .led-logo-cv,
+      body.led .spot-team .led-logo-cv {
+        width: 64px !important;
+        height: 64px !important;
+      }
+      body.led .led-size-label { height: 16px !important; }
+      body.led .led-score-inline { display: none !important; }
+      body.led .spot-scores { display: flex !important; }
+      body.led .led-size-score,
+      body.led .spot-scores .led-size-score,
+      body.led .spot-dash-cv { height: 48px !important; }
+      body.led .led-size-status { height: 14px !important; }
+    }
 
   </style>
 </head>
@@ -1876,7 +1939,7 @@
       <section id="grid-view" hidden></section>
     </main>
     <div class="led-ticker" aria-label="Other scores ticker">
-      <div class="led-ticker-track" id="ticker-track"></div>
+      <canvas id="ticker-canvas"></canvas>
     </div>
 
     <footer class="note">
@@ -1894,10 +1957,12 @@
     <div class="alert-rings" aria-hidden="true"></div>
     <div class="led-grid alert-grid" aria-hidden="true"></div>
     <div class="alert-inner">
-      <img id="alert-logo" alt="" />
+      <canvas id="alert-logo" class="led-logo-cv" width="128" height="128" aria-hidden="true"></canvas>
       <div class="alert-copy">
-        <div id="alert-label" class="alert-label">TOUCHDOWN</div>
-        <div id="alert-team" class="alert-team"></div>
+        <canvas id="alert-label" class="led-text-cv led-size-alert" data-text="TOUCHDOWN" data-color="#00ff44" aria-hidden="true"></canvas>
+        <canvas id="alert-team" class="led-text-cv led-size-label" data-text="" data-color="#ffffff" aria-hidden="true"></canvas>
+        <span id="alert-label-text" class="vh">TOUCHDOWN</span>
+        <span id="alert-team-text" class="vh"></span>
       </div>
     </div>
   </div>
@@ -2245,6 +2310,20 @@
       return liftLedHex(primary);
     }
 
+
+    function hiResLogo(team) {
+      if (!team) return "";
+      const id = team.id != null ? String(team.id) : "";
+      if (/^\d+$/.test(id)) {
+        return "https://a.espncdn.com/i/teamlogos/ncaa/500/" + id + ".png";
+      }
+      const raw = team.logo || team.logoDark || "";
+      if (!raw) return "";
+      return String(raw)
+        .replace(/\/ncaa\/(?:\d+|500-dark)\//g, "/ncaa/500/")
+        .replace(/[?&]w=\d+/g, "");
+    }
+
     function classifyScoreChange(delta, playText, gameIdStr, teamId) {
       const text = String(playText || "").toLowerCase();
       const isTdPlay = /touchdown|(^|[^a-z])td([^a-z]|$)/.test(text) && !/no touchdown/.test(text);
@@ -2454,14 +2533,26 @@
       alertEl.style.setProperty("--alert-c", primary);
       alertEl.style.setProperty("--alert-a", accent);
       alertEl.dataset.kind = item.label || item.kind || "SCORE!";
-      alertLabel.textContent = item.label || item.kind || "SCORE!";
-      alertTeam.textContent = (team.abbreviation || team.shortDisplayName || team.location || team.displayName || "").toUpperCase();
-      const logo = team.logoDark || team.logo || "";
+      const label = item.label || item.kind || "SCORE!";
+      const teamName = (team.abbreviation || team.shortDisplayName || team.location || team.displayName || "").toUpperCase();
+      const kindColor = label === "TOUCHDOWN" ? "#00ff44"
+        : label === "FIELD GOAL" ? "#ffb000"
+        : label === "SAFETY" ? "#ff2a2a"
+        : "#ffffff";
+      alertLabel.dataset.text = label;
+      alertLabel.dataset.color = kindColor;
+      alertTeam.dataset.text = teamName;
+      alertTeam.dataset.color = "#ffffff";
+      const labelText = document.getElementById("alert-label-text");
+      const teamText = document.getElementById("alert-team-text");
+      if (labelText) labelText.textContent = label;
+      if (teamText) teamText.textContent = teamName;
+      const logo = hiResLogo(team);
       if (logo) {
-        alertLogo.src = logo;
+        alertLogo.dataset.src = logo;
         alertLogo.hidden = false;
       } else {
-        alertLogo.removeAttribute("src");
+        delete alertLogo.dataset.src;
         alertLogo.hidden = true;
       }
       // Restart CSS animations
@@ -2474,6 +2565,7 @@
       });
       startConfetti(primary, alt);
       playAlertSound(item.kind || item.label);
+      requestAnimationFrame(() => paintLedTree(alertEl));
     }
 
     function clearAlertTimers() {
@@ -2662,12 +2754,341 @@
       snapshotScores,
       isAlertVisible: () => !alertEl.hidden,
       alertText: () => ({
-        label: alertLabel.textContent,
-        team: alertTeam.textContent,
+        label: alertLabel.dataset.text || (document.getElementById("alert-label-text") || {}).textContent,
+        team: alertTeam.dataset.text || (document.getElementById("alert-team-text") || {}).textContent,
         kind: alertEl.dataset.kind,
         hidden: alertEl.hidden,
       }),
     };
+
+    /* —— True LED dot-matrix (crisp round dots, devicePixelRatio backing store) —— */
+    const LED_ROWS = 7;
+    const LED_COLS = 5;
+    const LED_FONT = {
+      " ": [0,0,0,0,0,0,0],
+      "0": [0x0e,0x11,0x13,0x15,0x19,0x11,0x0e],
+      "1": [0x04,0x0c,0x04,0x04,0x04,0x04,0x0e],
+      "2": [0x0e,0x11,0x01,0x02,0x04,0x08,0x1f],
+      "3": [0x1e,0x01,0x01,0x0e,0x01,0x01,0x1e],
+      "4": [0x02,0x06,0x0a,0x12,0x1f,0x02,0x02],
+      "5": [0x1f,0x10,0x1e,0x01,0x01,0x11,0x0e],
+      "6": [0x0e,0x10,0x10,0x1e,0x11,0x11,0x0e],
+      "7": [0x1f,0x01,0x02,0x04,0x08,0x08,0x08],
+      "8": [0x0e,0x11,0x11,0x0e,0x11,0x11,0x0e],
+      "9": [0x0e,0x11,0x11,0x0f,0x01,0x01,0x0e],
+      "A": [0x0e,0x11,0x11,0x1f,0x11,0x11,0x11],
+      "B": [0x1e,0x11,0x11,0x1e,0x11,0x11,0x1e],
+      "C": [0x0e,0x11,0x10,0x10,0x10,0x11,0x0e],
+      "D": [0x1e,0x11,0x11,0x11,0x11,0x11,0x1e],
+      "E": [0x1f,0x10,0x10,0x1e,0x10,0x10,0x1f],
+      "F": [0x1f,0x10,0x10,0x1e,0x10,0x10,0x10],
+      "G": [0x0e,0x11,0x10,0x17,0x11,0x11,0x0f],
+      "H": [0x11,0x11,0x11,0x1f,0x11,0x11,0x11],
+      "I": [0x0e,0x04,0x04,0x04,0x04,0x04,0x0e],
+      "J": [0x01,0x01,0x01,0x01,0x11,0x11,0x0e],
+      "K": [0x11,0x12,0x14,0x18,0x14,0x12,0x11],
+      "L": [0x10,0x10,0x10,0x10,0x10,0x10,0x1f],
+      "M": [0x11,0x1b,0x15,0x15,0x11,0x11,0x11],
+      "N": [0x11,0x19,0x15,0x13,0x11,0x11,0x11],
+      "O": [0x0e,0x11,0x11,0x11,0x11,0x11,0x0e],
+      "P": [0x1e,0x11,0x11,0x1e,0x10,0x10,0x10],
+      "Q": [0x0e,0x11,0x11,0x11,0x15,0x12,0x0d],
+      "R": [0x1e,0x11,0x11,0x1e,0x14,0x12,0x11],
+      "S": [0x0e,0x11,0x10,0x0e,0x01,0x11,0x0e],
+      "T": [0x1f,0x04,0x04,0x04,0x04,0x04,0x04],
+      "U": [0x11,0x11,0x11,0x11,0x11,0x11,0x0e],
+      "V": [0x11,0x11,0x11,0x11,0x11,0x0a,0x04],
+      "W": [0x11,0x11,0x11,0x15,0x15,0x15,0x0a],
+      "X": [0x11,0x11,0x0a,0x04,0x0a,0x11,0x11],
+      "Y": [0x11,0x11,0x0a,0x04,0x04,0x04,0x04],
+      "Z": [0x1f,0x01,0x02,0x04,0x08,0x10,0x1f],
+      "-": [0x00,0x00,0x00,0x1f,0x00,0x00,0x00],
+      ":": [0x00,0x04,0x00,0x00,0x00,0x04,0x00],
+      ".": [0x00,0x00,0x00,0x00,0x00,0x06,0x06],
+      ",": [0x00,0x00,0x00,0x00,0x00,0x04,0x08],
+      "/": [0x01,0x02,0x02,0x04,0x08,0x08,0x10],
+      "&": [0x0c,0x12,0x14,0x08,0x15,0x12,0x0d],
+      "#": [0x0a,0x0a,0x1f,0x0a,0x1f,0x0a,0x0a],
+      "'": [0x04,0x04,0x08,0x00,0x00,0x00,0x00],
+      "?": [0x0e,0x11,0x01,0x02,0x04,0x00,0x04],
+      "!": [0x04,0x04,0x04,0x04,0x04,0x00,0x04],
+      "+": [0x00,0x04,0x04,0x1f,0x04,0x04,0x00],
+      "*": [0x00,0x15,0x0e,0x04,0x0e,0x15,0x00],
+      "=": [0x00,0x00,0x1f,0x00,0x1f,0x00,0x00],
+      "%": [0x19,0x1a,0x02,0x04,0x08,0x0b,0x13],
+      "$": [0x04,0x0f,0x14,0x0e,0x05,0x1e,0x04],
+      "•": [0x00,0x00,0x04,0x0e,0x04,0x00,0x00],
+      "(" : [0x02,0x04,0x08,0x08,0x08,0x04,0x02],
+      ")" : [0x08,0x04,0x02,0x02,0x02,0x04,0x08]
+    };
+
+    function ledDpr() {
+      const n = window.devicePixelRatio || 1;
+      return n >= 1.5 ? Math.round(n) : Math.max(1, n);
+    }
+
+    function ledGlyph(ch) {
+      const u = String(ch).toUpperCase();
+      if (LED_FONT[u]) return LED_FONT[u];
+      if (u === "—" || u === "–") return LED_FONT["-"];
+      if (u === "·") return LED_FONT["•"];
+      return LED_FONT[" "];
+    }
+
+    function ledTextLen(text) {
+      return String(text || "").length;
+    }
+
+    function measureLedText(text, pitch) {
+      const n = ledTextLen(text);
+      return { w: Math.max(0, n * 6 * pitch - pitch), h: LED_ROWS * pitch };
+    }
+
+    function measureLedRuns(runs, pitch) {
+      let w = 0;
+      for (const run of runs) w += measureLedText(run.t, pitch).w + pitch;
+      return w;
+    }
+
+    function drawLedDot(ctx, x, y, r, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawLedText(ctx, text, originX, originY, pitch, color) {
+      const r = Math.max(0.75, pitch * 0.36);
+      let x = originX;
+      const str = String(text || "");
+      for (let i = 0; i < str.length; i++) {
+        const g = ledGlyph(str[i]);
+        for (let row = 0; row < LED_ROWS; row++) {
+          const bits = g[row] || 0;
+          for (let col = 0; col < LED_COLS; col++) {
+            if (bits & (1 << (4 - col))) {
+              drawLedDot(ctx, x + (col + 0.5) * pitch, originY + (row + 0.5) * pitch, r, color);
+            }
+          }
+        }
+        x += 6 * pitch;
+      }
+      return x;
+    }
+
+    function drawLedRuns(ctx, runs, originX, originY, pitch) {
+      let x = originX;
+      for (const run of runs) {
+        const color = run.c || "#ffffff";
+        drawLedText(ctx, run.t, x, originY, pitch, color);
+        x += measureLedText(run.t, pitch).w + pitch;
+      }
+      return x;
+    }
+
+    function fitLedPitch(cssH, dpr) {
+      const bufH = Math.max(7, Math.round(cssH * dpr));
+      return Math.max(2, Math.floor(bufH / LED_ROWS));
+    }
+
+    function sizeLedCanvas(cv, cssW, cssH, dpr, lockWidth) {
+      const w = Math.max(1, Math.round(cssW * dpr));
+      const h = Math.max(1, Math.round(cssH * dpr));
+      if (cv.width !== w) cv.width = w;
+      if (cv.height !== h) cv.height = h;
+      if (lockWidth) cv.style.width = Math.max(1, Math.round(cssW)) + "px";
+      return { w, h, dpr };
+    }
+
+    function ledCssHeight(cv, fallback) {
+      const raw = getComputedStyle(cv).height;
+      const v = parseFloat(raw);
+      if (Number.isFinite(v) && v > 0 && v !== 150) return v; /* 150 is the intrinsic canvas default */
+      return fallback;
+    }
+
+    function parseLedRuns(cv) {
+      if (cv.dataset.parts) {
+        try { return JSON.parse(cv.dataset.parts); } catch (e) {}
+      }
+      return [{ t: cv.dataset.text || "", c: cv.dataset.color || "#ffffff" }];
+    }
+
+    function paintLedTextCanvas(cv) {
+      const dpr = ledDpr();
+      const cssH = ledCssHeight(cv, 24);
+      const runs = parseLedRuns(cv);
+      let pitch = fitLedPitch(cssH, dpr);
+      const fluid = cv.classList.contains("led-size-status");
+      const parentW = (cv.parentElement && cv.parentElement.clientWidth) || 0;
+      let cssW;
+      if (fluid) {
+        cssW = parentW || cv.clientWidth || 300;
+        const maxDev = Math.max(1, Math.round(cssW * dpr));
+        const need = measureLedRuns(runs, pitch);
+        if (need > maxDev) pitch = Math.max(2, Math.floor(maxDev / (need / pitch)));
+      } else {
+        const textWdev = measureLedRuns(runs, pitch);
+        cssW = Math.max(Math.ceil(textWdev / dpr), 8);
+      }
+      const { w, h } = sizeLedCanvas(cv, cssW, cssH, dpr, !fluid);
+      const ctx = cv.getContext("2d");
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const y = Math.floor((h - LED_ROWS * pitch) / 2);
+      drawLedRuns(ctx, runs, 0, y, pitch);
+    }
+
+    const logoCache = new Map();
+    function loadLedLogo(src) {
+      if (!src) return Promise.resolve(null);
+      if (logoCache.has(src)) return logoCache.get(src);
+      const p = new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+      logoCache.set(src, p);
+      return p;
+    }
+
+    function paintLedLogoCanvas(cv) {
+      const src = cv.dataset.src || "";
+      const dpr = ledDpr();
+      const box = getComputedStyle(cv);
+      let cssW = parseFloat(box.width);
+      let cssH = parseFloat(box.height);
+      if (!cssW || cssW === 300) cssW = 96;
+      if (!cssH || cssH === 150) cssH = cssW;
+      const { w, h } = sizeLedCanvas(cv, cssW, cssH, dpr, false);
+      const grid = Math.max(16, Math.min(32, Math.round((cv.dataset.grid && Number(cv.dataset.grid)) || 28)));
+      const pitch = Math.max(2, Math.floor(Math.min(w, h) / grid));
+      const used = pitch * grid;
+      const ox = Math.floor((w - used) / 2);
+      const oy = Math.floor((h - used) / 2);
+      const r = Math.max(0.75, pitch * 0.38);
+      const ctx = cv.getContext("2d");
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      return loadLedLogo(src).then((img) => {
+        if (!img || cv.dataset.src !== src) return;
+        const off = document.createElement("canvas");
+        off.width = grid;
+        off.height = grid;
+        const o = off.getContext("2d");
+        const scale = Math.min(grid / img.width, grid / img.height);
+        const dw = Math.max(1, Math.round(img.width * scale));
+        const dh = Math.max(1, Math.round(img.height * scale));
+        o.clearRect(0, 0, grid, grid);
+        o.drawImage(img, Math.floor((grid - dw) / 2), Math.floor((grid - dh) / 2), dw, dh);
+        const data = o.getImageData(0, 0, grid, grid).data;
+        ctx.clearRect(0, 0, w, h);
+        for (let row = 0; row < grid; row++) {
+          for (let col = 0; col < grid; col++) {
+            const i = (row * grid + col) * 4;
+            const a = data[i + 3];
+            if (a < 48) continue;
+            const R = data[i], G = data[i + 1], B = data[i + 2];
+            if (R + G + B < 36) continue;
+            const aa = a / 255;
+            const color = "rgba(" + R + "," + G + "," + B + "," + aa.toFixed(3) + ")";
+            drawLedDot(ctx, ox + (col + 0.5) * pitch, oy + (row + 0.5) * pitch, r, color);
+          }
+        }
+      });
+    }
+
+    function paintLedTree(root) {
+      const scope = root || document;
+      scope.querySelectorAll("canvas.led-text-cv").forEach((cv) => {
+        try { paintLedTextCanvas(cv); } catch (e) {}
+      });
+      const logos = [...scope.querySelectorAll("canvas.led-logo-cv")];
+      return Promise.all(logos.map((cv) => paintLedLogoCanvas(cv).catch(() => {})));
+    }
+
+    function scoreLedColor(competitor, isFinal, isPre) {
+      if (isPre) return "#3a3a3a";
+      if (isFinal && competitor.winner === true) return "#00ff44";
+      if (isFinal && competitor.winner === false) return "#7a2020";
+      return "#ff2a2a";
+    }
+
+    function ledCanvas(tagClass, attrs, cssClass) {
+      const parts = ["canvas", "class=\"" + (cssClass || tagClass) + "\""];
+      Object.keys(attrs).forEach((k) => {
+        if (attrs[k] == null || attrs[k] === "") return;
+        parts.push(k + "=\"" + escapeHtml(String(attrs[k])) + "\"");
+      });
+      return "<" + parts.join(" ") + "></canvas>";
+    }
+
+    let tickerAnim = { raf: 0, offset: 0, last: 0, runs: [], sig: "" };
+
+    function tickerRunsFor(event) {
+      const teams = orderedCompetitors(event);
+      const away = teams[0] || {};
+      const home = teams[1] || teams[0] || {};
+      const bucket = statusBucket(event);
+      const isPre = bucket === "upcoming";
+      const isFinal = bucket === "final";
+      const scoreOf = (c) => {
+        const raw = c.score;
+        return isPre || raw === "" || raw == null ? "--" : String(raw);
+      };
+      const abbr = (c) => ((c.team || {}).abbreviation || (c.team || {}).shortDisplayName || "?").toUpperCase();
+      let status = "";
+      let sc = "#ffb000";
+      if (bucket === "live") { status = "LIVE " + String(statusLabel(event) || "").toUpperCase(); sc = "#ff2a2a"; }
+      else if (isFinal) { status = "FINAL"; sc = "#00ff44"; }
+      else { status = String(statusLabel(event) || "UPCOMING").toUpperCase(); sc = "#3ecbff"; }
+      return [
+        { t: "  " + abbr(away) + " ", c: "#ffffff" },
+        { t: scoreOf(away), c: scoreLedColor(away, isFinal, isPre) },
+        { t: "  " + abbr(home) + " ", c: "#ffffff" },
+        { t: scoreOf(home), c: scoreLedColor(home, isFinal, isPre) },
+        { t: "  " + status + "   •  ", c: sc }
+      ];
+    }
+
+    function drawTickerFrame(ts) {
+      const cv = document.getElementById("ticker-canvas");
+      if (!cv) { tickerAnim.raf = 0; return; }
+      tickerAnim.raf = requestAnimationFrame(drawTickerFrame);
+      const dpr = ledDpr();
+      const parent = cv.parentElement;
+      const cssW = (parent && parent.clientWidth) || cv.clientWidth || 300;
+      const cssH = (parent && parent.clientHeight) || cv.clientHeight || 48;
+      if (cv.width !== Math.round(cssW * dpr) || cv.height !== Math.round(cssH * dpr)) {
+        cv.width = Math.max(1, Math.round(cssW * dpr));
+        cv.height = Math.max(1, Math.round(cssH * dpr));
+        cv.style.width = "100%";
+        cv.style.height = cssH + "px";
+      }
+      const ctx = cv.getContext("2d");
+      const pitch = Math.max(2, Math.floor(cv.height / LED_ROWS));
+      const runs = tickerAnim.runs.length ? tickerAnim.runs : [{ t: "  NO GAMES  ", c: "#ffb000" }];
+      const total = Math.max(pitch, measureLedRuns(runs, pitch));
+      if (!tickerAnim.last) tickerAnim.last = ts;
+      const dt = Math.min(50, ts - tickerAnim.last);
+      tickerAnim.last = ts;
+      tickerAnim.offset += pitch * 10 * (dt / 1000);
+      if (tickerAnim.offset > total) tickerAnim.offset = tickerAnim.offset % total;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, cv.width, cv.height);
+      const y = Math.floor((cv.height - LED_ROWS * pitch) / 2);
+      const start = -Math.floor(tickerAnim.offset);
+      for (let x = start; x < cv.width + pitch; x += total) {
+        drawLedRuns(ctx, runs, x, y, pitch);
+      }
+    }
+
+    function startTickerLoop() {
+      if (!tickerAnim.raf) tickerAnim.raf = requestAnimationFrame(drawTickerFrame);
+    }
 
     function teamRow(competitor, possessionId, isFinal, isPre) {
       const team = competitor.team || {};
@@ -2676,7 +3097,7 @@
       const name = team.shortDisplayName || team.location || team.displayName || "TBD";
       const abbrev = team.abbreviation || "";
       const record = recordOf(competitor);
-      const logo = team.logoDark || team.logo || "";
+      const logo = hiResLogo(team);
       const hasBall = possessionId && String(possessionId) === String(competitor.id || team.id);
       const winner = competitor.winner === true;
       const loser = isFinal && competitor.winner === false;
@@ -2688,7 +3109,7 @@
       if (loser) classes.push("loser");
       return (
         '<div class="' + classes.join(" ") + '">' +
-          (logo ? '<img src="' + escapeHtml(logo) + '" alt="" width="36" height="36" />' : "<div></div>") +
+          (logo ? ledCanvas("led-logo-cv", {"data-src": logo, "data-grid": "18", "aria-hidden": "true"}, "led-logo-cv") : "<div></div>") +
           '<div class="ident">' +
             '<div class="name">' +
               (ranked ? '<span class="rank">' + rank + "</span>" : "") +
@@ -2749,7 +3170,7 @@
       const name = team.shortDisplayName || team.location || team.displayName || "TBD";
       const abbrev = team.abbreviation || "";
       const record = recordOf(competitor);
-      const logo = team.logoDark || team.logo || "";
+      const logo = hiResLogo(team);
       const hasBall = possessionId && String(possessionId) === String(competitor.id || team.id);
       const winner = competitor.winner === true;
       const loser = isFinal && competitor.winner === false;
@@ -2759,19 +3180,16 @@
       if (hasBall) classes.push("has-ball");
       if (winner) classes.push("winner");
       if (loser) classes.push("loser");
-      const led = ledTeamColor(team, "#ffb000");
       const letters = (abbrev || name).toUpperCase();
+      const label = (ranked ? String(rank) + " " : "") + letters;
+      const scoreColor = scoreLedColor(competitor, isFinal, isPre);
       return (
-        '<div class="' + classes.join(" ") + '" style="--led:' + led + '">' +
-          (logo ? '<img class="led-logo" src="' + escapeHtml(logo) + '" alt="' + escapeHtml(name) + '" />' : "") +
-          '<div class="led-abbr">' +
-            (ranked ? '<span class="rank">' + rank + "</span> " : "") +
-            escapeHtml(letters) +
-          "</div>" +
-          '<div class="spot-name">' + escapeHtml(name) + "</div>" +
-          '<div class="spot-meta">' + escapeHtml([abbrev, record].filter(Boolean).join(" · ")) + "</div>" +
+        '<div class="' + classes.join(" ") + '">' +
+          (logo ? ledCanvas("led-logo-cv", {"data-src": logo, "data-grid": "28", "aria-label": name}, "led-logo-cv") : "") +
+          ledCanvas("led-text-cv", {"data-text": label, "data-color": "#ffffff"}, "led-text-cv led-size-label") +
+          '<div class="spot-name vh">' + escapeHtml(name) + "</div>" +
           footballSvg("poss") +
-          '<div class="spot-score-inline' + (isPre ? " blank" : "") + '">' + escapeHtml(score) + "</div>" +
+          ledCanvas("led-text-cv", {"data-text": score, "data-color": scoreColor}, "led-text-cv led-size-score led-score-inline") +
         "</div>"
       );
     }
@@ -2806,27 +3224,28 @@
       const homeScore = scoreOf(home);
 
       const midBits = situation || "";
+      const statusParts = [];
+      if (isLive) statusParts.push({ t: "LIVE  ", c: "#ff2a2a" });
+      else if (isFinal) statusParts.push({ t: "FINAL  ", c: "#00ff44" });
+      else statusParts.push({ t: "UPCOMING  ", c: "#3ecbff" });
+      if (showStatus && label) statusParts.push({ t: String(label).toUpperCase() + "  ", c: "#ffffff" });
+      if (midBits) statusParts.push({ t: String(midBits).toUpperCase() + "  ", c: "#ffb000" });
+      if (network) statusParts.push({ t: String(network).toUpperCase() + "  ", c: "#ffffff" });
+      const awayColor = scoreLedColor(away, isFinal, isPre);
+      const homeColor = scoreLedColor(home, isFinal, isPre);
+      const statusA11y = [badgeText, showStatus ? label : "", midBits, network].filter(Boolean).join(" ");
       return (
         '<article class="spot ' + bucket + '" data-id="' + escapeHtml(gameId(event)) + '">' +
           '<div class="spot-top">' +
-            '<div class="spot-top-left">' +
-              '<span class="badge ' + bucket + '">' + badgeText + "</span>" +
-              (showStatus ? '<span class="spot-clock">' + escapeHtml(label) + "</span>" : "") +
-              (midBits ? '<span class="spot-situation">' + escapeHtml(midBits) + "</span>" : "") +
-            "</div>" +
-            '<div class="spot-top-right">' +
-              (network ? '<span class="network">' + escapeHtml(network) + "</span>" : "") +
-              (tags.length || (situation && venue)
-                ? '<span class="spot-tags">' + escapeHtml(tags.join(" · ")) + (situation && venue ? " · " + escapeHtml(venue) : "") + "</span>"
-                : "") +
-            "</div>" +
+            ledCanvas("led-text-cv", {"data-parts": JSON.stringify(statusParts)}, "led-text-cv led-size-status") +
+            '<span class="vh">' + escapeHtml(statusA11y) + "</span>" +
           "</div>" +
           '<div class="spot-teams">' +
             spotTeamHtml(away, possessionId, isFinal, isPre) +
             '<div class="spot-scores" aria-hidden="true">' +
-              '<div class="spot-score' + (isPre ? " blank" : "") + (away.winner ? " winner" : "") + (isFinal && away.winner === false ? " loser" : "") + '">' + escapeHtml(awayScore) + "</div>" +
-              '<div class="spot-dash">–</div>' +
-              '<div class="spot-score' + (isPre ? " blank" : "") + (home.winner ? " winner" : "") + (isFinal && home.winner === false ? " loser" : "") + '">' + escapeHtml(homeScore) + "</div>" +
+              ledCanvas("led-text-cv", {"data-text": awayScore, "data-color": awayColor}, "led-text-cv led-size-score") +
+              ledCanvas("led-text-cv", {"data-text": "-", "data-color": "#444444"}, "led-text-cv led-size-score spot-dash-cv") +
+              ledCanvas("led-text-cv", {"data-text": homeScore, "data-color": homeColor}, "led-text-cv led-size-score") +
             "</div>" +
             spotTeamHtml(home, possessionId, isFinal, isPre) +
           "</div>" +
@@ -2906,14 +3325,20 @@
           if (old) img.replaceWith(old);
         });
         existing.replaceWith(next);
+        paintLedTree(stageEl);
         return;
       }
       stageEl.classList.remove("anim-next", "anim-prev");
       if (animDir === 1) stageEl.classList.add("anim-next");
       if (animDir === -1) stageEl.classList.add("anim-prev");
       stageEl.innerHTML = spotlightHtml(event);
+      paintLedTree(stageEl);
       if (animDir) {
-        const onEnd = () => stageEl.classList.remove("anim-next", "anim-prev");
+        const onEnd = () => {
+          stageEl.classList.remove("anim-next", "anim-prev");
+          stageEl.querySelectorAll(".spot").forEach((el) => { el.style.transform = "none"; });
+          paintLedTree(stageEl);
+        };
         stageEl.querySelector(".spot")?.addEventListener("animationend", onEnd, { once: true });
       }
     }
@@ -2983,6 +3408,7 @@
           '<div class="grid">' + list.map(cardHtml).join("") + "</div></section>";
       }
       gridView.innerHTML = html;
+      paintLedTree(gridView);
     }
 
     function applyViewMode() {
@@ -3038,46 +3464,17 @@
     }
 
 
-    function tickerItemHtml(event) {
-      const teams = orderedCompetitors(event);
-      const away = teams[0] || {};
-      const home = teams[1] || teams[0] || {};
-      const bucket = statusBucket(event);
-      const isPre = bucket === "upcoming";
-      const scoreOf = (c) => {
-        const raw = c.score;
-        return isPre || raw === "" || raw == null ? "--" : String(raw);
-      };
-      const teamBit = (c) => {
-        const team = c.team || {};
-        const color = ledTeamColor(team, "#ffb000");
-        const abbr = escapeHtml((team.abbreviation || team.shortDisplayName || "?").toUpperCase());
-        return '<span class="tk-team" style="color:' + color + '">' + abbr + "</span>";
-      };
-      const cls = bucket === "live" ? "tk-live" : bucket === "final" ? "tk-final" : "tk-up";
-      let status = "";
-      if (bucket === "live") status = "LIVE " + escapeHtml(statusLabel(event) || "");
-      else if (bucket === "final") status = "FINAL";
-      else status = escapeHtml(statusLabel(event) || "");
-      return (
-        teamBit(away) + " " + escapeHtml(scoreOf(away)) + "  " +
-        teamBit(home) + " " + escapeHtml(scoreOf(home)) +
-        '  <span class="' + cls + '">' + status + "</span>"
-      );
-    }
-
     function updateTicker() {
-      const track = document.getElementById("ticker-track");
-      if (!track) return;
       const games = (typeof filteredGames === "function") ? filteredGames() : [];
-      const bits = games.map(tickerItemHtml);
-      const line = bits.length ? bits.join(" &nbsp;&nbsp;·&nbsp;&nbsp; ") : "NO GAMES";
-      if (track.dataset.sig === line) return;
-      track.dataset.sig = line;
-      const html = '<span class="led-ticker-copy">' + line + "</span>";
-      track.innerHTML = html + html;
-      const dur = Math.max(28, Math.round((games.length || 1) * 6.5));
-      track.style.setProperty("--ticker-dur", dur + "s");
+      const runs = [];
+      if (!games.length) runs.push({ t: "  NO GAMES  ", c: "#ffb000" });
+      else games.forEach((g) => { runs.push.apply(runs, tickerRunsFor(g)); });
+      const sig = JSON.stringify(runs);
+      if (sig !== tickerAnim.sig) {
+        tickerAnim.runs = runs;
+        tickerAnim.sig = sig;
+      }
+      startTickerLoop();
     }
 
     let controlsTimer = null;
@@ -3298,6 +3695,18 @@
     });
     document.addEventListener("keydown", () => showControls());
     showControls(5000);
+
+    let ledResizeTimer = null;
+    function scheduleLedRepaint() {
+      if (ledResizeTimer) clearTimeout(ledResizeTimer);
+      ledResizeTimer = setTimeout(() => {
+        paintLedTree(document);
+        startTickerLoop();
+      }, 80);
+    }
+    window.addEventListener("resize", scheduleLedRepaint);
+    window.visualViewport?.addEventListener("resize", scheduleLedRepaint);
+
 
     let swipeX = null, swipeY = null, swipeT = 0, swipeMoved = false, swipePointer = null;
     const swipeIgnore = "a, button, input, select, textarea, label, .topbar, .rotate-bar, .rot-progress";
