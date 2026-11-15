@@ -1102,10 +1102,10 @@
       pointer-events: none;
       z-index: 0;
       /* Faint unlit beads on the black panel only — never punched over text. */
-      background-image: radial-gradient(circle at center, #1c1c1c 1px, transparent 1.25px);
+      background-image: radial-gradient(circle at center, #141414 0.7px, transparent 0.95px);
       background-size: var(--led-pitch) var(--led-pitch);
       background-position: 0 0;
-      opacity: 0.85;
+      opacity: 0.45;
     }
     .spotlight-shell,
     #grid-view {
@@ -1142,7 +1142,7 @@
       padding: clamp(6px, 1.5vh, 16px) clamp(12px, 3vw, 36px) clamp(4px, 1vh, 12px);
       gap: clamp(4px, 1vh, 10px);
     }
-    body.led .spot-top { min-height: 24px; }
+    body.led .spot-top { min-height: 0; width: 100%; flex-shrink: 0; }
     body.led .badge {
       font-family: "Press Start 2P", "Silkscreen", monospace;
       font-size: 16px;
@@ -1351,17 +1351,14 @@
     body.led .alert-burst,
     body.led .alert-rings { display: none !important; }
     body.led .alert-flash {
-      background: currentColor;
-      color: var(--led-green);
-      mix-blend-mode: screen;
-      animation: ledWash 0.45s steps(2, end) 6;
+      display: none;
     }
     body.led .score-alert[data-kind="FIELD GOAL"] .alert-flash { color: var(--led-amber); }
     body.led .score-alert[data-kind="SAFETY"] .alert-flash { color: var(--led-red); }
     body.led .score-alert[data-kind="EXTRA POINT"] .alert-flash,
     body.led .score-alert[data-kind="2-PT CONVERSION"] .alert-flash { color: var(--led-cyan); }
     @keyframes ledWash {
-      0%, 40% { opacity: 0.35; }
+      0%, 40% { opacity: 0.12; }
       50%, 100% { opacity: 0; }
     }
     .led-chase {
@@ -1395,6 +1392,25 @@
     }
     body.led .alert-inner {
       z-index: 10;
+      animation: none;
+      transform: none;
+      width: 100%;
+      max-width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(8px, 2vh, 20px);
+      padding: 12px 8px;
+    }
+    body.led .alert-copy {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    body.led #alert-label {
+      animation: ledTdFlash 0.45s steps(1, end) infinite;
     }
     body.led .alert-label {
       font-family: "Press Start 2P", "Silkscreen", monospace;
@@ -1528,29 +1544,15 @@
         display: flex;
         flex-direction: column;
         grid-template-columns: none;
-        justify-content: space-evenly;
-        gap: clamp(16px, 4vh, 36px);
+        justify-content: stretch;
+        gap: clamp(6px, 1.4vh, 16px);
         min-height: 0;
       }
       body.led .spot-scores { display: none !important; }
-      body.led .spot-team {
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        grid-template-areas:
-          "logo abbr score"
-          "logo name score";
-        column-gap: 12px;
-        row-gap: 2px;
-        align-items: center;
-        text-align: left;
-        width: 100%;
-        gap: unset;
-      }
       body.led .spot-team img,
       body.led .spot-team img.led-logo {
-        grid-area: logo;
-        width: 96px;
-        height: 96px;
+        width: 42vw;
+        height: 42vw;
       }
       body.led .led-abbr {
         grid-area: abbr;
@@ -1674,26 +1676,26 @@
       body.led .spot-score-inline { display: none !important; }
       body.led .spot-teams {
         display: grid !important;
-        grid-template-columns: 1fr auto 1fr;
+        grid-template-columns: minmax(0, 0.9fr) minmax(48vw, 1.55fr) minmax(0, 0.9fr);
         flex-direction: unset;
-        align-items: center;
-        justify-items: center;
-        gap: 8px 16px;
+        align-items: stretch;
+        justify-items: stretch;
+        gap: 6px 10px;
       }
       body.led .spot-team {
         display: flex !important;
         flex-direction: column;
         align-items: center;
         text-align: center;
-        gap: 2px;
-        width: auto;
+        gap: 4px;
+        width: 100%;
         grid-template-columns: none;
         grid-template-areas: none;
       }
       body.led .spot-team img,
       body.led .spot-team img.led-logo {
-        width: 64px !important;
-        height: 64px !important;
+        width: min(32vh, 22vw) !important;
+        height: min(32vh, 22vw) !important;
         grid-area: auto;
       }
       body.led .led-abbr {
@@ -1792,58 +1794,251 @@
       background: transparent;
     }
     #ticker-canvas { width: 100%; height: 100%; }
-    body.led .led-logo-cv {
-      width: 160px;
-      height: 160px;
+    .led-fill {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .led-score-slot,
+    .led-alert-label-slot,
+    .led-alert-team-slot,
+    .led-rank-slot,
+    .led-name-slot,
+    .led-status-slot,
+    .spot-team-name {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+    }
+    body.led .spot-team-name {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+    }
+    body.led .led-rank-slot {
+      flex: 0 0 17%;
+      width: 17%;
+      height: 38%;
+      align-self: flex-start;
+      position: relative;
+    }
+    body.led .led-name-slot {
+      flex: 1 1 0;
+      width: auto;
+      height: 100%;
+      position: relative;
+    }
+    body.led .led-size-rank {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* Desktop / 1920x720: large logos, names just below giant center scores */
+    body.led .spot-teams {
+      flex: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(40vw, 1.4fr) minmax(0, 0.95fr);
+      align-items: stretch;
+      gap: clamp(8px, 1.5vw, 24px);
+      min-height: 0;
+    }
+    body.led .spot-team {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 8px;
+      min-width: 0;
+      min-height: 0;
+      width: 100%;
+    }
+    body.led .spot-team-name {
+      flex: 0 0 32%;
+      width: 100%;
+    }
+    body.led .spot-team-score-row {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 0;
+      width: 100%;
+    }
+    body.led .led-logo-cv,
+    body.led .spot-team .led-logo-cv {
+      width: min(36vh, 18vw);
+      height: min(36vh, 18vw);
+      max-width: 100%;
+      max-height: 100%;
       flex-shrink: 0;
       align-self: center;
     }
-    body.led .led-size-label { height: 24px; width: auto; max-width: 100%; align-self: center; }
-    body.led .led-size-score { height: 96px; align-self: center; }
-    body.led .led-size-status { width: 100%; height: 16px; }
-    body.led .led-size-alert { height: 40px; }
+    body.led .led-status-slot {
+      width: 100%;
+      height: 48px;
+      position: relative;
+      flex-shrink: 0;
+    }
     body.led .spot-top { width: 100%; }
-    body.led .spot-scores .led-size-score { height: 96px; }
-    body.led .spot-dash-cv { width: 32px; height: 96px; }
-    @media (min-width: 701px) {
-      body.led .led-score-inline { display: none !important; }
+    body.led .spot-scores {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      min-height: 0;
+      min-width: 0;
+      gap: clamp(8px, 1vw, 16px);
+    }
+    body.led .spot-scores .led-score-slot {
+      height: 100%;
+      flex: 1 1 0;
+      width: auto;
+      min-width: 0;
+      position: relative;
+    }
+    body.led .spot-scores .spot-dash-slot {
+      flex: 0 0 clamp(20px, 2.2vw, 48px);
+      width: clamp(20px, 2.2vw, 48px);
+      height: 28%;
+      align-self: center;
+    }
+    body.led .led-score-inline { display: none; }
+    body.led .spot-team-score-row .led-score-slot { display: none; }
+    body.led .led-size-alert,
+    body.led .led-alert-label-slot {
+      width: min(96vw, 1600px);
+      height: clamp(64px, 16vh, 160px);
+    }
+    body.led .led-size-alert-team,
+    body.led .led-alert-team-slot {
+      width: min(80vw, 900px);
+      height: clamp(40px, 9vh, 88px);
+    }
+    body.led #alert-logo,
+    body.led .alert-logo {
+      width: min(36vh, 28vw, 280px) !important;
+      height: min(36vh, 28vw, 280px) !important;
     }
 
-
+    /* iPhone portrait: stacked team blocks, logo ~40% width, huge name + score */
     @media (max-width: 700px) and (max-aspect-ratio: 3/4) {
+      body.led .spot-teams {
+        display: flex !important;
+        flex-direction: column;
+        grid-template-columns: none;
+        justify-content: stretch;
+        gap: clamp(6px, 1.4vh, 16px);
+        flex: 1;
+        min-height: 0;
+      }
+      body.led .spot-team {
+        flex: 1 1 0;
+        display: flex !important;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: stretch;
+        width: 100%;
+        min-height: 0;
+        gap: 4px;
+        grid-template-columns: none;
+        grid-template-areas: none;
+      }
+      body.led .spot-team-name {
+        flex: 0 0 36%;
+        width: 100%;
+      }
+      body.led .spot-team-score-row {
+        flex: 1 1 0;
+        min-height: 0;
+        width: 100%;
+        justify-content: flex-start;
+      }
+      body.led .spot-team .led-logo-cv,
       body.led .led-logo-cv {
-        grid-area: logo;
-        width: 96px !important;
-        height: 96px !important;
+        width: 42vw !important;
+        height: 42vw !important;
+        max-width: 45%;
+        max-height: 100%;
+        grid-area: auto;
       }
-      body.led .led-size-label {
-        grid-area: abbr;
-        height: 24px !important;
-        width: auto;
-        max-width: 100%;
+      body.led .led-score-inline { display: block !important; }
+      body.led .spot-team-score-row .led-score-slot { display: block; }
+      body.led .spot-team-score-row .led-score-slot {
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+        position: relative;
       }
-      body.led .led-size-score.led-score-inline {
-        grid-area: score;
-        height: 64px !important;
-      }
-      body.led .led-size-status { height: 16px !important; }
+      body.led .spot-scores { display: none !important; }
+      body.led .led-status-slot { height: 56px; width: 100%; }
       body.led .spot-name,
       body.led .spot-meta { display: none; }
+      body.led #alert-logo,
+      body.led .alert-logo {
+        width: 42vw !important;
+        height: 42vw !important;
+      }
+      body.led .led-alert-label-slot { height: clamp(80px, 16vh, 140px); width: min(96vw, 1600px) !important; }
+      body.led .led-alert-team-slot { height: clamp(48px, 9vh, 80px); width: min(80vw, 900px) !important; }
     }
 
+    /* iPhone landscape: large side logos + names, giant center scores */
     @media (max-height: 500px) and (min-aspect-ratio: 1.6/1) {
+      body.led .spot-teams {
+        display: grid !important;
+        grid-template-columns: minmax(0, 0.9fr) minmax(48vw, 1.55fr) minmax(0, 0.9fr) !important;
+        flex-direction: unset;
+        align-items: stretch;
+        justify-items: stretch;
+        gap: 6px 10px;
+      }
+      body.led .spot-team {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 4px;
+        width: 100%;
+        min-height: 0;
+        grid-template-columns: none;
+        grid-template-areas: none;
+      }
+      body.led .spot-team-name { flex: 0 0 34%; width: 100%; }
+      body.led .spot-team-score-row {
+        flex: 1 1 0;
+        justify-content: center;
+      }
       body.led .led-logo-cv,
       body.led .spot-team .led-logo-cv {
-        width: 64px !important;
-        height: 64px !important;
+        width: min(32vh, 22vw) !important;
+        height: min(32vh, 22vw) !important;
+        max-height: 100%;
+        grid-area: auto;
       }
-      body.led .led-size-label { height: 16px !important; }
       body.led .led-score-inline { display: none !important; }
-      body.led .spot-scores { display: flex !important; }
-      body.led .led-size-score,
-      body.led .spot-scores .led-size-score,
-      body.led .spot-dash-cv { height: 48px !important; }
-      body.led .led-size-status { height: 14px !important; }
+      body.led .spot-scores { display: flex !important; height: 100%; width: 100%; }
+      body.led .spot-scores .led-score-slot {
+        height: 100%;
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+      }
+      body.led .spot-scores .spot-dash-slot { flex: 0 0 clamp(20px, 3vw, 40px); width: clamp(20px, 3vw, 40px); height: 45%; }
+      body.led .led-status-slot { height: 32px; width: 100%; position: relative; }
+      body.led #alert-logo,
+      body.led .alert-logo {
+        width: min(28vh, 18vw) !important;
+        height: min(28vh, 18vw) !important;
+      }
+      body.led .led-alert-label-slot { height: clamp(48px, 22vh, 88px); }
+      body.led .led-alert-team-slot { height: clamp(28px, 12vh, 48px); }
     }
 
   </style>
@@ -1957,10 +2152,14 @@
     <div class="alert-rings" aria-hidden="true"></div>
     <div class="led-grid alert-grid" aria-hidden="true"></div>
     <div class="alert-inner">
-      <canvas id="alert-logo" class="led-logo-cv" width="128" height="128" aria-hidden="true"></canvas>
+      <canvas id="alert-logo" class="led-logo-cv" data-grid="24" aria-hidden="true"></canvas>
       <div class="alert-copy">
-        <canvas id="alert-label" class="led-text-cv led-size-alert" data-text="TOUCHDOWN" data-color="#00ff44" aria-hidden="true"></canvas>
-        <canvas id="alert-team" class="led-text-cv led-size-label" data-text="" data-color="#ffffff" aria-hidden="true"></canvas>
+        <div class="led-alert-label-slot">
+          <canvas id="alert-label" class="led-text-cv led-size-alert led-fill" data-text="TOUCHDOWN" data-color="#00ff44" aria-hidden="true"></canvas>
+        </div>
+        <div class="led-alert-team-slot">
+          <canvas id="alert-team" class="led-text-cv led-size-alert-team led-fill" data-text="" data-color="#ffffff" aria-hidden="true"></canvas>
+        </div>
         <span id="alert-label-text" class="vh">TOUCHDOWN</span>
         <span id="alert-team-text" class="vh"></span>
       </div>
@@ -2550,6 +2749,7 @@
       const logo = hiResLogo(team);
       if (logo) {
         alertLogo.dataset.src = logo;
+        alertLogo.dataset.grid = "24";
         alertLogo.hidden = false;
       } else {
         delete alertLogo.dataset.src;
@@ -2565,7 +2765,7 @@
       });
       startConfetti(primary, alt);
       playAlertSound(item.kind || item.label);
-      requestAnimationFrame(() => paintLedTree(alertEl));
+      paintLedTreeAfterLayout(alertEl);
     }
 
     function clearAlertTimers() {
@@ -2761,65 +2961,67 @@
       }),
     };
 
-    /* —— True LED dot-matrix (crisp round dots, devicePixelRatio backing store) —— */
-    const LED_ROWS = 7;
-    const LED_COLS = 5;
+    /* —— True LED dot-matrix (chunky 8x12 glyphs, nearly-touching dots, DPR) —— */
+    const LED_ROWS = 12;
+    const LED_COLS = 8;
+    const LED_ADV = 9;
+    const LED_DOT = 0.84;
     const LED_FONT = {
-      " ": [0,0,0,0,0,0,0],
-      "0": [0x0e,0x11,0x13,0x15,0x19,0x11,0x0e],
-      "1": [0x04,0x0c,0x04,0x04,0x04,0x04,0x0e],
-      "2": [0x0e,0x11,0x01,0x02,0x04,0x08,0x1f],
-      "3": [0x1e,0x01,0x01,0x0e,0x01,0x01,0x1e],
-      "4": [0x02,0x06,0x0a,0x12,0x1f,0x02,0x02],
-      "5": [0x1f,0x10,0x1e,0x01,0x01,0x11,0x0e],
-      "6": [0x0e,0x10,0x10,0x1e,0x11,0x11,0x0e],
-      "7": [0x1f,0x01,0x02,0x04,0x08,0x08,0x08],
-      "8": [0x0e,0x11,0x11,0x0e,0x11,0x11,0x0e],
-      "9": [0x0e,0x11,0x11,0x0f,0x01,0x01,0x0e],
-      "A": [0x0e,0x11,0x11,0x1f,0x11,0x11,0x11],
-      "B": [0x1e,0x11,0x11,0x1e,0x11,0x11,0x1e],
-      "C": [0x0e,0x11,0x10,0x10,0x10,0x11,0x0e],
-      "D": [0x1e,0x11,0x11,0x11,0x11,0x11,0x1e],
-      "E": [0x1f,0x10,0x10,0x1e,0x10,0x10,0x1f],
-      "F": [0x1f,0x10,0x10,0x1e,0x10,0x10,0x10],
-      "G": [0x0e,0x11,0x10,0x17,0x11,0x11,0x0f],
-      "H": [0x11,0x11,0x11,0x1f,0x11,0x11,0x11],
-      "I": [0x0e,0x04,0x04,0x04,0x04,0x04,0x0e],
-      "J": [0x01,0x01,0x01,0x01,0x11,0x11,0x0e],
-      "K": [0x11,0x12,0x14,0x18,0x14,0x12,0x11],
-      "L": [0x10,0x10,0x10,0x10,0x10,0x10,0x1f],
-      "M": [0x11,0x1b,0x15,0x15,0x11,0x11,0x11],
-      "N": [0x11,0x19,0x15,0x13,0x11,0x11,0x11],
-      "O": [0x0e,0x11,0x11,0x11,0x11,0x11,0x0e],
-      "P": [0x1e,0x11,0x11,0x1e,0x10,0x10,0x10],
-      "Q": [0x0e,0x11,0x11,0x11,0x15,0x12,0x0d],
-      "R": [0x1e,0x11,0x11,0x1e,0x14,0x12,0x11],
-      "S": [0x0e,0x11,0x10,0x0e,0x01,0x11,0x0e],
-      "T": [0x1f,0x04,0x04,0x04,0x04,0x04,0x04],
-      "U": [0x11,0x11,0x11,0x11,0x11,0x11,0x0e],
-      "V": [0x11,0x11,0x11,0x11,0x11,0x0a,0x04],
-      "W": [0x11,0x11,0x11,0x15,0x15,0x15,0x0a],
-      "X": [0x11,0x11,0x0a,0x04,0x0a,0x11,0x11],
-      "Y": [0x11,0x11,0x0a,0x04,0x04,0x04,0x04],
-      "Z": [0x1f,0x01,0x02,0x04,0x08,0x10,0x1f],
-      "-": [0x00,0x00,0x00,0x1f,0x00,0x00,0x00],
-      ":": [0x00,0x04,0x00,0x00,0x00,0x04,0x00],
-      ".": [0x00,0x00,0x00,0x00,0x00,0x06,0x06],
-      ",": [0x00,0x00,0x00,0x00,0x00,0x04,0x08],
-      "/": [0x01,0x02,0x02,0x04,0x08,0x08,0x10],
-      "&": [0x0c,0x12,0x14,0x08,0x15,0x12,0x0d],
-      "#": [0x0a,0x0a,0x1f,0x0a,0x1f,0x0a,0x0a],
-      "'": [0x04,0x04,0x08,0x00,0x00,0x00,0x00],
-      "?": [0x0e,0x11,0x01,0x02,0x04,0x00,0x04],
-      "!": [0x04,0x04,0x04,0x04,0x04,0x00,0x04],
-      "+": [0x00,0x04,0x04,0x1f,0x04,0x04,0x00],
-      "*": [0x00,0x15,0x0e,0x04,0x0e,0x15,0x00],
-      "=": [0x00,0x00,0x1f,0x00,0x1f,0x00,0x00],
-      "%": [0x19,0x1a,0x02,0x04,0x08,0x0b,0x13],
-      "$": [0x04,0x0f,0x14,0x0e,0x05,0x1e,0x04],
-      "•": [0x00,0x00,0x04,0x0e,0x04,0x00,0x00],
-      "(" : [0x02,0x04,0x08,0x08,0x08,0x04,0x02],
-      ")" : [0x08,0x04,0x02,0x02,0x02,0x04,0x08]
+      " ": [0,0,0,0,0,0,0,0,0,0,0,0],
+      "0": [0x3C,0x7E,0xE7,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xE7,0x7E,0x3C],
+      "1": [0x18,0x38,0x78,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18],
+      "2": [0x3C,0x7E,0xC3,0x03,0x07,0x0E,0x1C,0x38,0x70,0xE0,0xFF,0xFF],
+      "3": [0x3C,0x7E,0xC3,0x03,0x06,0x3C,0x3C,0x06,0x03,0xC3,0x7E,0x3C],
+      "4": [0x06,0x0E,0x1E,0x36,0x66,0xC6,0xFF,0xFF,0x06,0x06,0x06,0x06],
+      "5": [0xFF,0xFF,0xC0,0xC0,0xFC,0xFE,0x07,0x03,0x03,0xC3,0x7E,0x3C],
+      "6": [0x3C,0x7E,0xC3,0xC0,0xFC,0xFE,0xC3,0xC3,0xC3,0xC3,0x7E,0x3C],
+      "7": [0xFF,0xFF,0x03,0x06,0x0C,0x18,0x18,0x30,0x30,0x30,0x30,0x30],
+      "8": [0x3C,0x7E,0xC3,0xC3,0x7E,0x3C,0x7E,0xC3,0xC3,0xC3,0x7E,0x3C],
+      "9": [0x3C,0x7E,0xC3,0xC3,0xC3,0x7F,0x3F,0x03,0x03,0xC3,0x7E,0x3C],
+      "A": [0x3C,0x7E,0xC3,0xC3,0xC3,0xFF,0xFF,0xC3,0xC3,0xC3,0xC3,0xC3],
+      "B": [0xFE,0xFF,0xC3,0xC3,0xFE,0xFE,0xC3,0xC3,0xC3,0xC3,0xFF,0xFE],
+      "C": [0x3C,0x7E,0xC3,0xC0,0xC0,0xC0,0xC0,0xC0,0xC0,0xC3,0x7E,0x3C],
+      "D": [0xFC,0xFE,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xFE,0xFC],
+      "E": [0xFF,0xFF,0xC0,0xC0,0xC0,0xFE,0xFE,0xC0,0xC0,0xC0,0xFF,0xFF],
+      "F": [0xFF,0xFF,0xC0,0xC0,0xC0,0xFE,0xFE,0xC0,0xC0,0xC0,0xC0,0xC0],
+      "G": [0x3C,0x7E,0xC3,0xC0,0xC0,0xCF,0xCF,0xC3,0xC3,0xC3,0x7E,0x3C],
+      "H": [0xC3,0xC3,0xC3,0xC3,0xC3,0xFF,0xFF,0xC3,0xC3,0xC3,0xC3,0xC3],
+      "I": [0xFF,0xFF,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0xFF,0xFF],
+      "J": [0x3F,0x3F,0x06,0x06,0x06,0x06,0x06,0x06,0xC6,0xC6,0x7C,0x38],
+      "K": [0xC3,0xC6,0xCC,0xD8,0xF0,0xE0,0xF0,0xD8,0xCC,0xC6,0xC3,0xC3],
+      "L": [0xC0,0xC0,0xC0,0xC0,0xC0,0xC0,0xC0,0xC0,0xC0,0xC0,0xFF,0xFF],
+      "M": [0xC3,0xE7,0xFF,0xFF,0xDB,0xDB,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3],
+      "N": [0xC3,0xE3,0xE3,0xF3,0xF3,0xDB,0xDB,0xCF,0xCF,0xC7,0xC7,0xC3],
+      "O": [0x3C,0x7E,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0x7E,0x3C],
+      "P": [0xFC,0xFE,0xC3,0xC3,0xC3,0xFE,0xFC,0xC0,0xC0,0xC0,0xC0,0xC0],
+      "Q": [0x3C,0x7E,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xDB,0xCF,0x7E,0x3D],
+      "R": [0xFC,0xFE,0xC3,0xC3,0xC3,0xFE,0xFC,0xF0,0xD8,0xCC,0xC6,0xC3],
+      "S": [0x3C,0x7E,0xC3,0xC0,0xE0,0x7C,0x3E,0x07,0x03,0xC3,0x7E,0x3C],
+      "T": [0xFF,0xFF,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18],
+      "U": [0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0x7E,0x3C],
+      "V": [0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0x66,0x66,0x3C,0x3C,0x18],
+      "W": [0xC3,0xC3,0xC3,0xC3,0xC3,0xC3,0xDB,0xDB,0xFF,0xFF,0xE7,0xC3],
+      "X": [0xC3,0xC3,0x66,0x66,0x3C,0x18,0x18,0x3C,0x66,0x66,0xC3,0xC3],
+      "Y": [0xC3,0xC3,0x66,0x66,0x3C,0x18,0x18,0x18,0x18,0x18,0x18,0x18],
+      "Z": [0xFF,0xFF,0x03,0x06,0x0C,0x18,0x18,0x30,0x60,0xC0,0xFF,0xFF],
+      "-": [0,0,0,0,0,0xFF,0xFF,0,0,0,0,0],
+      ":": [0,0,0x18,0x3C,0x3C,0x18,0,0,0x18,0x3C,0x3C,0x18],
+      ".": [0,0,0,0,0,0,0,0,0x18,0x3C,0x3C,0x18],
+      ",": [0,0,0,0,0,0,0,0x18,0x3C,0x18,0x30,0x60],
+      "/": [0x03,0x03,0x06,0x06,0x0C,0x0C,0x18,0x18,0x30,0x30,0x60,0x60],
+      "&": [0x3C,0x66,0x66,0x3C,0x18,0x3A,0x6E,0xC6,0xC6,0x7E,0x3B,0x01],
+      "#": [0x24,0x24,0xFF,0x66,0x66,0xFF,0x66,0x66,0xFF,0x24,0x24,0],
+      "'": [0x18,0x18,0x18,0x30,0,0,0,0,0,0,0,0],
+      "?": [0x3C,0x7E,0xC3,0x03,0x0E,0x18,0x18,0x18,0,0x18,0x18,0],
+      "!": [0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0,0x18,0x18,0x18],
+      "+": [0,0,0x18,0x18,0x18,0xFF,0xFF,0x18,0x18,0x18,0,0],
+      "*": [0,0x18,0xDB,0x7E,0x3C,0x18,0x3C,0x7E,0xDB,0x18,0,0],
+      "=": [0,0,0,0xFF,0xFF,0,0,0xFF,0xFF,0,0,0],
+      "%": [0x63,0x63,0x06,0x06,0x0C,0x0C,0x18,0x18,0x30,0x30,0xC6,0xC6],
+      "$": [0x18,0x3C,0x7E,0xDB,0xD8,0x7C,0x3E,0x1B,0xDB,0x7E,0x3C,0x18],
+      "•": [0,0,0,0x18,0x3C,0x7E,0x7E,0x3C,0x18,0,0,0],
+      "(": [0x0C,0x18,0x30,0x30,0x60,0x60,0x60,0x60,0x30,0x30,0x18,0x0C],
+      ")": [0x30,0x18,0x0C,0x0C,0x06,0x06,0x06,0x06,0x0C,0x0C,0x18,0x30]
     };
 
     function ledDpr() {
@@ -2841,7 +3043,7 @@
 
     function measureLedText(text, pitch) {
       const n = ledTextLen(text);
-      return { w: Math.max(0, n * 6 * pitch - pitch), h: LED_ROWS * pitch };
+      return { w: Math.max(0, n * LED_ADV * pitch - pitch), h: LED_ROWS * pitch };
     }
 
     function measureLedRuns(runs, pitch) {
@@ -2850,15 +3052,27 @@
       return w;
     }
 
-    function drawLedDot(ctx, x, y, r, color) {
+    function ledRunsCols(runs) {
+      const pitch = 8;
+      return Math.max(1, Math.round(measureLedRuns(runs, pitch) / pitch));
+    }
+
+    function drawLedDot(ctx, x, y, pitch, color) {
+      const size = pitch * LED_DOT;
+      const rad = size * 0.28;
+      const x0 = x - size / 2;
+      const y0 = y - size / 2;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(x0, y0, size, size, rad);
+      } else {
+        ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+      }
       ctx.fill();
     }
 
     function drawLedText(ctx, text, originX, originY, pitch, color) {
-      const r = Math.max(0.75, pitch * 0.36);
       let x = originX;
       const str = String(text || "");
       for (let i = 0; i < str.length; i++) {
@@ -2866,12 +3080,12 @@
         for (let row = 0; row < LED_ROWS; row++) {
           const bits = g[row] || 0;
           for (let col = 0; col < LED_COLS; col++) {
-            if (bits & (1 << (4 - col))) {
-              drawLedDot(ctx, x + (col + 0.5) * pitch, originY + (row + 0.5) * pitch, r, color);
+            if (bits & (0x80 >> col)) {
+              drawLedDot(ctx, x + (col + 0.5) * pitch, originY + (row + 0.5) * pitch, pitch, color);
             }
           }
         }
-        x += 6 * pitch;
+        x += LED_ADV * pitch;
       }
       return x;
     }
@@ -2886,9 +3100,9 @@
       return x;
     }
 
-    function fitLedPitch(cssH, dpr) {
-      const bufH = Math.max(7, Math.round(cssH * dpr));
-      return Math.max(2, Math.floor(bufH / LED_ROWS));
+    function fitLedPitch(cssH, dpr, rows) {
+      const bufH = Math.max(rows || LED_ROWS, Math.round(cssH * dpr));
+      return Math.max(2, Math.floor(bufH / (rows || LED_ROWS)));
     }
 
     function sizeLedCanvas(cv, cssW, cssH, dpr, lockWidth) {
@@ -2903,7 +3117,9 @@
     function ledCssHeight(cv, fallback) {
       const raw = getComputedStyle(cv).height;
       const v = parseFloat(raw);
-      if (Number.isFinite(v) && v > 0 && v !== 150) return v; /* 150 is the intrinsic canvas default */
+      if (Number.isFinite(v) && v > 0 && v !== 150) return v;
+      const ch = cv.clientHeight;
+      if (ch > 0 && ch !== 150) return ch;
       return fallback;
     }
 
@@ -2914,29 +3130,66 @@
       return [{ t: cv.dataset.text || "", c: cv.dataset.color || "#ffffff" }];
     }
 
+    function parseLedLines(cv) {
+      if (cv.dataset.lines) {
+        try {
+          const lines = JSON.parse(cv.dataset.lines);
+          if (Array.isArray(lines) && lines.length) return lines;
+        } catch (e) {}
+      }
+      return [parseLedRuns(cv)];
+    }
+
     function paintLedTextCanvas(cv) {
       const dpr = ledDpr();
-      const cssH = ledCssHeight(cv, 24);
-      const runs = parseLedRuns(cv);
-      let pitch = fitLedPitch(cssH, dpr);
-      const fluid = cv.classList.contains("led-size-status");
-      const parentW = (cv.parentElement && cv.parentElement.clientWidth) || 0;
-      let cssW;
-      if (fluid) {
-        cssW = parentW || cv.clientWidth || 300;
-        const maxDev = Math.max(1, Math.round(cssW * dpr));
-        const need = measureLedRuns(runs, pitch);
-        if (need > maxDev) pitch = Math.max(2, Math.floor(maxDev / (need / pitch)));
+      let lines = parseLedLines(cv);
+      let nLines = Math.max(1, lines.length);
+      let rowSpan = nLines * LED_ROWS + (nLines - 1);
+      const fill = cv.classList.contains("led-fill") || cv.classList.contains("led-size-status");
+      const parent = cv.parentElement;
+      let cssW, cssH;
+      if (fill) {
+        cssW = cv.clientWidth || (parent && parent.clientWidth) || 300;
+        cssH = cv.clientHeight || (parent && parent.clientHeight) || ledCssHeight(cv, 24);
+        if (!cssW || cssW < 4) cssW = (parent && parent.clientWidth) || 300;
+        if (!cssH || cssH < 4 || cssH === 150) cssH = ledCssHeight(cv, 24);
       } else {
-        const textWdev = measureLedRuns(runs, pitch);
+        cssH = ledCssHeight(cv, 24);
+      }
+      if (lines.length > 1 && fill) {
+        const maxDevW = Math.max(1, Math.round(cssW * dpr));
+        const maxDevH = Math.max(1, Math.round(cssH * dpr));
+        const flat = lines.reduce((acc, runs) => acc.concat(runs), []);
+        const oneP = Math.max(1, Math.min(Math.floor(maxDevW / ledRunsCols(flat)), Math.floor(maxDevH / LED_ROWS)));
+        const twoP = Math.max(1, Math.min(Math.floor(maxDevW / Math.max(...lines.map((runs) => ledRunsCols(runs)))), Math.floor(maxDevH / rowSpan)));
+        if (oneP >= twoP && oneP >= Math.max(3, twoP + 1)) {
+          lines = [flat];
+          nLines = 1;
+          rowSpan = LED_ROWS;
+        }
+      }
+      let pitch = fitLedPitch(cssH, dpr, rowSpan);
+      if (fill) {
+        const maxDevW = Math.max(1, Math.round(cssW * dpr));
+        const maxCols = Math.max(...lines.map((runs) => ledRunsCols(runs)));
+        pitch = Math.max(2, Math.min(pitch, Math.floor(maxDevW / Math.max(1, maxCols))));
+      } else {
+        const textWdev = Math.max(...lines.map((runs) => measureLedRuns(runs, pitch)));
         cssW = Math.max(Math.ceil(textWdev / dpr), 8);
       }
-      const { w, h } = sizeLedCanvas(cv, cssW, cssH, dpr, !fluid);
+      const { w, h } = sizeLedCanvas(cv, cssW, cssH, dpr, !fill);
       const ctx = cv.getContext("2d");
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      const y = Math.floor((h - LED_ROWS * pitch) / 2);
-      drawLedRuns(ctx, runs, 0, y, pitch);
+      const usedH = rowSpan * pitch;
+      let y = Math.floor((h - usedH) / 2);
+      const maxW = Math.max(...lines.map((runs) => measureLedRuns(runs, pitch)));
+      for (const runs of lines) {
+        const lineW = measureLedRuns(runs, pitch);
+        const x = fill ? Math.floor((w - lineW) / 2) : 0;
+        drawLedRuns(ctx, runs, Math.max(0, x), y, pitch);
+        y += (LED_ROWS + 1) * pitch;
+      }
     }
 
     const logoCache = new Map();
@@ -2954,47 +3207,93 @@
       return p;
     }
 
+    function liftLedPixel(r, g, b, a) {
+      if (a < 28) return null;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      if (max < 18) return null;
+      if (max < 40 && (max - min) < 12) return null;
+      let R = r, G = g, B = b;
+      const peak = Math.max(R, G, B, 1);
+      if (peak < 230) {
+        const s = 230 / peak;
+        R = Math.min(255, R * s);
+        G = Math.min(255, G * s);
+        B = Math.min(255, B * s);
+      }
+      const m = (R + G + B) / 3;
+      const sat = 1.45;
+      R = Math.max(0, Math.min(255, Math.round(m + (R - m) * sat)));
+      G = Math.max(0, Math.min(255, Math.round(m + (G - m) * sat)));
+      B = Math.max(0, Math.min(255, Math.round(m + (B - m) * sat)));
+      return "rgb(" + R + "," + G + "," + B + ")";
+    }
+
     function paintLedLogoCanvas(cv) {
       const src = cv.dataset.src || "";
       const dpr = ledDpr();
       const box = getComputedStyle(cv);
       let cssW = parseFloat(box.width);
       let cssH = parseFloat(box.height);
-      if (!cssW || cssW === 300) cssW = 96;
-      if (!cssH || cssH === 150) cssH = cssW;
+      if (!cssW || cssW === 300) cssW = cv.clientWidth || 96;
+      if (!cssH || cssH === 150) cssH = cv.clientHeight || cssW;
       const { w, h } = sizeLedCanvas(cv, cssW, cssH, dpr, false);
-      const grid = Math.max(16, Math.min(32, Math.round((cv.dataset.grid && Number(cv.dataset.grid)) || 28)));
+      const grid = Math.max(14, Math.min(36, Math.round((cv.dataset.grid && Number(cv.dataset.grid)) || 24)));
       const pitch = Math.max(2, Math.floor(Math.min(w, h) / grid));
       const used = pitch * grid;
       const ox = Math.floor((w - used) / 2);
       const oy = Math.floor((h - used) / 2);
-      const r = Math.max(0.75, pitch * 0.38);
       const ctx = cv.getContext("2d");
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, w, h);
       return loadLedLogo(src).then((img) => {
         if (!img || cv.dataset.src !== src) return;
+        const probeW = Math.min(img.width, 256);
+        const probeH = Math.min(img.height, 256);
+        const probe = document.createElement("canvas");
+        probe.width = probeW;
+        probe.height = probeH;
+        const pc = probe.getContext("2d");
+        pc.drawImage(img, 0, 0, probeW, probeH);
+        const pd = pc.getImageData(0, 0, probeW, probeH).data;
+        let minX = probeW, minY = probeH, maxX = 0, maxY = 0;
+        for (let y = 0; y < probeH; y++) {
+          for (let x = 0; x < probeW; x++) {
+            if (pd[(y * probeW + x) * 4 + 3] > 32) {
+              if (x < minX) minX = x;
+              if (y < minY) minY = y;
+              if (x > maxX) maxX = x;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        const srcW = img.width, srcH = img.height;
+        let sx = 0, sy = 0, sw = srcW, sh = srcH;
+        if (maxX >= minX) {
+          const scaleX = srcW / probeW, scaleY = srcH / probeH;
+          const pad = Math.max(1, Math.round(Math.max(maxX - minX, maxY - minY) * 0.05));
+          sx = Math.max(0, (minX - pad) * scaleX);
+          sy = Math.max(0, (minY - pad) * scaleY);
+          sw = Math.min(srcW - sx, (maxX - minX + 1 + pad * 2) * scaleX);
+          sh = Math.min(srcH - sy, (maxY - minY + 1 + pad * 2) * scaleY);
+        }
         const off = document.createElement("canvas");
         off.width = grid;
         off.height = grid;
         const o = off.getContext("2d");
-        const scale = Math.min(grid / img.width, grid / img.height);
-        const dw = Math.max(1, Math.round(img.width * scale));
-        const dh = Math.max(1, Math.round(img.height * scale));
+        const scale = Math.min(grid / sw, grid / sh);
+        const dw = Math.max(1, Math.round(sw * scale));
+        const dh = Math.max(1, Math.round(sh * scale));
         o.clearRect(0, 0, grid, grid);
-        o.drawImage(img, Math.floor((grid - dw) / 2), Math.floor((grid - dh) / 2), dw, dh);
+        o.drawImage(img, sx, sy, sw, sh, Math.floor((grid - dw) / 2), Math.floor((grid - dh) / 2), dw, dh);
         const data = o.getImageData(0, 0, grid, grid).data;
         ctx.clearRect(0, 0, w, h);
         for (let row = 0; row < grid; row++) {
           for (let col = 0; col < grid; col++) {
             const i = (row * grid + col) * 4;
-            const a = data[i + 3];
-            if (a < 48) continue;
-            const R = data[i], G = data[i + 1], B = data[i + 2];
-            if (R + G + B < 36) continue;
-            const aa = a / 255;
-            const color = "rgba(" + R + "," + G + "," + B + "," + aa.toFixed(3) + ")";
-            drawLedDot(ctx, ox + (col + 0.5) * pitch, oy + (row + 0.5) * pitch, r, color);
+            const color = liftLedPixel(data[i], data[i + 1], data[i + 2], data[i + 3]);
+            if (!color) continue;
+            drawLedDot(ctx, ox + (col + 0.5) * pitch, oy + (row + 0.5) * pitch, pitch, color);
           }
         }
       });
@@ -3102,7 +3401,7 @@
       const winner = competitor.winner === true;
       const loser = isFinal && competitor.winner === false;
       const scoreRaw = competitor.score;
-      const score = isPre || scoreRaw === "" || scoreRaw == null ? "—" : String(scoreRaw);
+      const score = isPre || scoreRaw === "" || scoreRaw == null ? "--" : String(scoreRaw);
       const classes = ["team"];
       if (hasBall) classes.push("has-ball");
       if (winner) classes.push("winner");
@@ -3175,21 +3474,34 @@
       const winner = competitor.winner === true;
       const loser = isFinal && competitor.winner === false;
       const scoreRaw = competitor.score;
-      const score = isPre || scoreRaw === "" || scoreRaw == null ? "—" : String(scoreRaw);
+      const score = isPre || scoreRaw === "" || scoreRaw == null ? "--" : String(scoreRaw);
       const classes = ["spot-team", competitor.homeAway || ""];
       if (hasBall) classes.push("has-ball");
       if (winner) classes.push("winner");
       if (loser) classes.push("loser");
-      const letters = (abbrev || name).toUpperCase();
-      const label = (ranked ? String(rank) + " " : "") + letters;
+      const letters = (abbrev || name || "?").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5) || (name || "?").toUpperCase().slice(0, 4);
       const scoreColor = scoreLedColor(competitor, isFinal, isPre);
+      const rankCv = ranked
+        ? '<div class="led-rank-slot">' +
+            ledCanvas("led-text-cv", {"data-text": "#" + rank, "data-color": "#ffb000"}, "led-text-cv led-size-rank led-fill") +
+          "</div>"
+        : "";
       return (
         '<div class="' + classes.join(" ") + '">' +
-          (logo ? ledCanvas("led-logo-cv", {"data-src": logo, "data-grid": "28", "aria-label": name}, "led-logo-cv") : "") +
-          ledCanvas("led-text-cv", {"data-text": label, "data-color": "#ffffff"}, "led-text-cv led-size-label") +
+          '<div class="spot-team-name' + (ranked ? " has-rank" : "") + '">' +
+            rankCv +
+            '<div class="led-name-slot">' +
+              ledCanvas("led-text-cv", {"data-text": letters, "data-color": "#ffffff"}, "led-text-cv led-size-label led-fill") +
+            "</div>" +
+          "</div>" +
+          '<div class="spot-team-score-row">' +
+            (logo ? ledCanvas("led-logo-cv", {"data-src": logo, "data-grid": "24", "aria-label": name}, "led-logo-cv") : "") +
+            '<div class="led-score-slot">' +
+              ledCanvas("led-text-cv", {"data-text": score, "data-color": scoreColor}, "led-text-cv led-size-score led-score-inline led-fill") +
+            "</div>" +
+            footballSvg("poss") +
+          "</div>" +
           '<div class="spot-name vh">' + escapeHtml(name) + "</div>" +
-          footballSvg("poss") +
-          ledCanvas("led-text-cv", {"data-text": score, "data-color": scoreColor}, "led-text-cv led-size-score led-score-inline") +
         "</div>"
       );
     }
@@ -3218,34 +3530,44 @@
       if (isTop25Game(event)) tags.push("Top 25");
       const scoreOf = (c) => {
         const raw = c.score;
-        return isPre || raw === "" || raw == null ? "—" : String(raw);
+        return isPre || raw === "" || raw == null ? "--" : String(raw);
       };
       const awayScore = scoreOf(away);
       const homeScore = scoreOf(home);
 
       const midBits = situation || "";
-      const statusParts = [];
-      if (isLive) statusParts.push({ t: "LIVE  ", c: "#ff2a2a" });
-      else if (isFinal) statusParts.push({ t: "FINAL  ", c: "#00ff44" });
-      else statusParts.push({ t: "UPCOMING  ", c: "#3ecbff" });
-      if (showStatus && label) statusParts.push({ t: String(label).toUpperCase() + "  ", c: "#ffffff" });
-      if (midBits) statusParts.push({ t: String(midBits).toUpperCase() + "  ", c: "#ffb000" });
-      if (network) statusParts.push({ t: String(network).toUpperCase() + "  ", c: "#ffffff" });
+      const line1 = [];
+      const line2 = [];
+      if (isLive) line1.push({ t: "LIVE  ", c: "#ff2a2a" });
+      else if (isFinal) line1.push({ t: "FINAL  ", c: "#00ff44" });
+      else line1.push({ t: "UPCOMING  ", c: "#3ecbff" });
+      if (showStatus && label) line1.push({ t: String(label).toUpperCase() + "  ", c: "#ffffff" });
+      if (midBits) line2.push({ t: String(midBits).toUpperCase() + "  ", c: "#ffb000" });
+      if (network) line2.push({ t: String(network).toUpperCase() + "  ", c: "#ffffff" });
+      const statusLines = line2.length ? [line1, line2] : [line1];
       const awayColor = scoreLedColor(away, isFinal, isPre);
       const homeColor = scoreLedColor(home, isFinal, isPre);
       const statusA11y = [badgeText, showStatus ? label : "", midBits, network].filter(Boolean).join(" ");
       return (
         '<article class="spot ' + bucket + '" data-id="' + escapeHtml(gameId(event)) + '">' +
           '<div class="spot-top">' +
-            ledCanvas("led-text-cv", {"data-parts": JSON.stringify(statusParts)}, "led-text-cv led-size-status") +
+            '<div class="led-status-slot">' +
+              ledCanvas("led-text-cv", {"data-lines": JSON.stringify(statusLines)}, "led-text-cv led-size-status led-fill") +
+            "</div>" +
             '<span class="vh">' + escapeHtml(statusA11y) + "</span>" +
           "</div>" +
           '<div class="spot-teams">' +
             spotTeamHtml(away, possessionId, isFinal, isPre) +
             '<div class="spot-scores" aria-hidden="true">' +
-              ledCanvas("led-text-cv", {"data-text": awayScore, "data-color": awayColor}, "led-text-cv led-size-score") +
-              ledCanvas("led-text-cv", {"data-text": "-", "data-color": "#444444"}, "led-text-cv led-size-score spot-dash-cv") +
-              ledCanvas("led-text-cv", {"data-text": homeScore, "data-color": homeColor}, "led-text-cv led-size-score") +
+              '<div class="led-score-slot">' +
+                ledCanvas("led-text-cv", {"data-text": awayScore, "data-color": awayColor}, "led-text-cv led-size-score led-fill") +
+              "</div>" +
+              '<div class="led-score-slot spot-dash-slot">' +
+                ledCanvas("led-text-cv", {"data-text": "-", "data-color": "#444444"}, "led-text-cv led-size-score led-fill") +
+              "</div>" +
+              '<div class="led-score-slot">' +
+                ledCanvas("led-text-cv", {"data-text": homeScore, "data-color": homeColor}, "led-text-cv led-size-score led-fill") +
+              "</div>" +
             "</div>" +
             spotTeamHtml(home, possessionId, isFinal, isPre) +
           "</div>" +
@@ -3325,19 +3647,19 @@
           if (old) img.replaceWith(old);
         });
         existing.replaceWith(next);
-        paintLedTree(stageEl);
+        paintLedTreeAfterLayout(stageEl);
         return;
       }
       stageEl.classList.remove("anim-next", "anim-prev");
       if (animDir === 1) stageEl.classList.add("anim-next");
       if (animDir === -1) stageEl.classList.add("anim-prev");
       stageEl.innerHTML = spotlightHtml(event);
-      paintLedTree(stageEl);
+      paintLedTreeAfterLayout(stageEl);
       if (animDir) {
         const onEnd = () => {
           stageEl.classList.remove("anim-next", "anim-prev");
           stageEl.querySelectorAll(".spot").forEach((el) => { el.style.transform = "none"; });
-          paintLedTree(stageEl);
+          paintLedTreeAfterLayout(stageEl);
         };
         stageEl.querySelector(".spot")?.addEventListener("animationend", onEnd, { once: true });
       }
@@ -3408,7 +3730,7 @@
           '<div class="grid">' + list.map(cardHtml).join("") + "</div></section>";
       }
       gridView.innerHTML = html;
-      paintLedTree(gridView);
+      paintLedTreeAfterLayout(gridView);
     }
 
     function applyViewMode() {
@@ -3696,11 +4018,19 @@
     document.addEventListener("keydown", () => showControls());
     showControls(5000);
 
+    function paintLedTreeAfterLayout(root) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          paintLedTree(root);
+        });
+      });
+    }
+
     let ledResizeTimer = null;
     function scheduleLedRepaint() {
       if (ledResizeTimer) clearTimeout(ledResizeTimer);
       ledResizeTimer = setTimeout(() => {
-        paintLedTree(document);
+        paintLedTreeAfterLayout(document);
         startTickerLoop();
       }, 80);
     }
