@@ -1055,6 +1055,19 @@
       --led-pitch: 10px;
       --led-dot: 3.2px;
       --led-unlit: #171717;
+      --app-w: 100vw;
+      --app-h: 100dvh;
+      --ticker-h: 56px;
+      --status-h: 48px;
+      --logo-size: 160px;
+      --pad: 8px;
+      --spot-pad: 6px;
+      --spot-gap: 6px;
+      --name-flex: 32%;
+      --alert-logo: 200px;
+      --alert-label-h: 96px;
+      --alert-team-h: 56px;
+      --bezel: 8px;
       --led-amber: #ffb000;
       --led-red: #ff2a2a;
       --led-green: #00ff55;
@@ -1066,24 +1079,45 @@
       color: var(--led-white);
       font-family: "VT323", "Silkscreen", monospace;
     }
+    html:has(body.led),
+    body.led,
     body.led.view-rotate,
     body.led.view-grid {
-      height: 100vh;
-      height: 100dvh;
+      width: var(--app-w, 100vw);
+      height: var(--app-h, 100dvh);
+      max-width: none;
       overflow: hidden;
+      overscroll-behavior: none;
     }
     body.led .wrap,
     body.led.view-rotate .wrap,
     body.led.view-grid .wrap {
-      max-width: 1920px;
-      width: 100%;
-      height: 100vh;
-      height: 100dvh;
-      margin: 0 auto;
-      padding: 10px;
+      max-width: none !important;
+      width: var(--app-w, 100vw) !important;
+      height: var(--app-h, 100dvh) !important;
+      min-height: 0 !important;
+      margin: 0;
+      padding: max(var(--pad, 8px), env(safe-area-inset-top, 0px))
+               max(var(--pad, 8px), env(safe-area-inset-right, 0px))
+               max(var(--pad, 8px), env(safe-area-inset-bottom, 0px))
+               max(var(--pad, 8px), env(safe-area-inset-left, 0px));
       background: #0a0a0a;
-      box-shadow: inset 0 0 0 8px #1a1a1a, inset 0 0 0 10px #2a2a2a, inset 0 0 24px #000;
+      box-shadow: inset 0 0 0 var(--bezel, 8px) #1a1a1a, inset 0 0 0 calc(var(--bezel, 8px) + 2px) #2a2a2a, inset 0 0 24px #000;
       box-sizing: border-box;
+      overflow: hidden !important;
+    }
+    body.led #board,
+    body.led #rotate-view,
+    body.led .spotlight-shell,
+    body.led .spotlight-stage,
+    body.led .spot {
+      flex: 1 1 0;
+      min-height: 0;
+      min-width: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
     body.led footer.note { display: none !important; }
     body.led .brand p { display: none; }
@@ -1142,8 +1176,8 @@
     }
 
     body.led .spot {
-      padding: clamp(6px, 1.5vh, 16px) clamp(12px, 3vw, 36px) clamp(4px, 1vh, 12px);
-      gap: clamp(4px, 1vh, 10px);
+      padding: var(--spot-pad, 6px);
+      gap: var(--spot-gap, 6px);
     }
     body.led .spot-top { min-height: 0; width: 100%; flex-shrink: 0; }
     body.led .badge {
@@ -1259,7 +1293,7 @@
     /* Bottom LED ticker */
     .led-ticker {
       flex-shrink: 0;
-      height: clamp(52px, 11vh, 84px);
+      height: var(--ticker-h, 56px);
       overflow: hidden;
       background: #000;
       display: flex;
@@ -1311,7 +1345,7 @@
     body.led .rotate-bar {
       left: 12px;
       right: 12px;
-      bottom: calc(clamp(52px, 11vh, 84px) + 14px);
+      bottom: calc(var(--ticker-h, 56px) + 14px);
       background: rgba(0,0,0,0.82);
       border: 1px solid #222;
       padding: 6px 10px;
@@ -1320,7 +1354,7 @@
     body.led .rot-progress {
       left: 12px;
       right: 12px;
-      bottom: calc(clamp(52px, 11vh, 84px) + 4px);
+      bottom: calc(var(--ticker-h, 56px) + 4px);
       margin-top: 0;
     }
     body.led.controls-on .topbar,
@@ -1478,7 +1512,7 @@
 
     /* Portrait phones (393x852, 430x932, and similar) */
     @media (max-width: 700px) and (max-aspect-ratio: 3/4) {
-      :root { --led-pitch: 8px; --ticker-h: clamp(48px, 7.5vh, 64px); }
+      /* ticker / pitch set by applyLedLayout() */
       html {
         height: 100%;
         height: 100dvh;
@@ -1542,21 +1576,7 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      body.led .spot-teams {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        grid-template-columns: none;
-        justify-content: stretch;
-        gap: clamp(6px, 1.4vh, 16px);
-        min-height: 0;
-      }
-      body.led .spot-scores { display: none !important; }
-      body.led .spot-team img,
-      body.led .spot-team img.led-logo {
-        width: 42vw;
-        height: 42vw;
-      }
+      /* stacked vs 3-col is data-led-layout, not this breakpoint */
       body.led .led-abbr {
         grid-area: abbr;
         font-size: 24px;
@@ -1656,7 +1676,7 @@
 
     /* iPhone landscape (852x393, 932x430): compact 3-column */
     @media (max-height: 500px) and (min-aspect-ratio: 1.6/1) {
-      :root { --led-pitch: 8px; --ticker-h: 36px; }
+      /* ticker / pitch set by applyLedLayout() */
       body.led .wrap,
       body.led.view-rotate .wrap,
       body.led.view-grid .wrap {
@@ -1675,32 +1695,7 @@
       body.led .spot-situation,
       body.led .network,
       body.led .spot-tags { font-size: 16px; }
-      body.led .spot-scores { display: flex !important; }
-      body.led .spot-score-inline { display: none !important; }
-      body.led .spot-teams {
-        display: grid !important;
-        grid-template-columns: minmax(0, 0.9fr) minmax(48vw, 1.55fr) minmax(0, 0.9fr);
-        flex-direction: unset;
-        align-items: stretch;
-        justify-items: stretch;
-        gap: 6px 10px;
-      }
-      body.led .spot-team {
-        display: flex !important;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 4px;
-        width: 100%;
-        grid-template-columns: none;
-        grid-template-areas: none;
-      }
-      body.led .spot-team img,
-      body.led .spot-team img.led-logo {
-        width: min(32vh, 22vw) !important;
-        height: min(32vh, 22vw) !important;
-        grid-area: auto;
-      }
+      /* stacked vs 3-col is data-led-layout, not this breakpoint */
       body.led .led-abbr {
         font-size: 16px;
         grid-area: auto;
@@ -1858,7 +1853,7 @@
       width: 100%;
     }
     body.led .spot-team-name {
-      flex: 0 0 32%;
+      flex: 0 0 var(--name-flex, 32%);
       width: 100%;
     }
     body.led .spot-team-score-row {
@@ -1873,8 +1868,8 @@
     }
     body.led .led-logo-cv,
     body.led .spot-team .led-logo-cv {
-      width: min(36vh, 18vw);
-      height: min(36vh, 18vw);
+      width: var(--logo-size, 160px);
+      height: var(--logo-size, 160px);
       max-width: 100%;
       max-height: 100%;
       flex-shrink: 0;
@@ -1882,7 +1877,7 @@
     }
     body.led .led-status-slot {
       width: 100%;
-      height: 48px;
+      height: var(--status-h, 48px) !important;
       position: relative;
       flex-shrink: 0;
     }
@@ -1914,135 +1909,108 @@
     body.led .spot-team-score-row .led-score-slot { display: none; }
     body.led .led-size-alert,
     body.led .led-alert-label-slot {
-      width: min(96vw, 1600px);
-      height: clamp(64px, 16vh, 160px);
+      width: min(96vw, 1800px);
+      height: var(--alert-label-h, 96px) !important;
     }
     body.led .led-size-alert-team,
     body.led .led-alert-team-slot {
-      width: min(80vw, 900px);
-      height: clamp(40px, 9vh, 88px);
+      width: min(80vw, 1200px);
+      height: var(--alert-team-h, 56px) !important;
     }
     body.led #alert-logo,
     body.led .alert-logo {
-      width: min(36vh, 28vw, 280px) !important;
-      height: min(36vh, 28vw, 280px) !important;
+      width: var(--alert-logo, 200px) !important;
+      height: var(--alert-logo, 200px) !important;
     }
 
-    /* iPhone portrait: stacked team blocks, logo ~40% width, huge name + score */
-    @media (max-width: 700px) and (max-aspect-ratio: 3/4) {
-      body.led .spot-teams {
-        display: flex !important;
-        flex-direction: column;
-        grid-template-columns: none;
-        justify-content: stretch;
-        gap: clamp(6px, 1.4vh, 16px);
-        flex: 1;
-        min-height: 0;
-      }
-      body.led .spot-team {
-        flex: 1 1 0;
-        display: flex !important;
-        flex-direction: column;
-        align-items: stretch;
-        justify-content: stretch;
-        width: 100%;
-        min-height: 0;
-        gap: 4px;
-        grid-template-columns: none;
-        grid-template-areas: none;
-      }
-      body.led .spot-team-name {
-        flex: 0 0 36%;
-        width: 100%;
-      }
-      body.led .spot-team-score-row {
-        flex: 1 1 0;
-        min-height: 0;
-        width: 100%;
-        justify-content: flex-start;
-      }
-      body.led .spot-team .led-logo-cv,
-      body.led .led-logo-cv {
-        width: 42vw !important;
-        height: 42vw !important;
-        max-width: 45%;
-        max-height: 100%;
-        grid-area: auto;
-      }
-      body.led .led-score-inline { display: block !important; }
-      body.led .spot-team-score-row .led-score-slot { display: block; }
-      body.led .spot-team-score-row .led-score-slot {
-        flex: 1 1 0;
-        min-width: 0;
-        min-height: 0;
-        height: 100%;
-        position: relative;
-      }
-      body.led .spot-scores { display: none !important; }
-      body.led .led-status-slot { height: 56px; width: 100%; }
-      body.led .spot-name,
-      body.led .spot-meta { display: none; }
-      body.led #alert-logo,
-      body.led .alert-logo {
-        width: 42vw !important;
-        height: 42vw !important;
-      }
-      body.led .led-alert-label-slot { height: clamp(80px, 16vh, 140px); width: min(96vw, 1600px) !important; }
-      body.led .led-alert-team-slot { height: clamp(48px, 9vh, 80px); width: min(80vw, 900px) !important; }
+    /* Fluid layouts chosen by JS from actual aspect ratio (not just breakpoints). */
+    body.led[data-led-layout="tall"] .spot-teams {
+      display: flex !important;
+      flex-direction: column;
+      grid-template-columns: none !important;
+      justify-content: stretch;
+      align-items: stretch;
+      gap: var(--spot-gap, 8px);
+      flex: 1;
+      min-height: 0;
+    }
+    body.led[data-led-layout="tall"] .spot-team {
+      flex: 1 1 0;
+      display: flex !important;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: stretch;
+      width: 100%;
+      min-height: 0;
+      gap: 4px;
+      grid-template-columns: none;
+      grid-template-areas: none;
+    }
+    body.led[data-led-layout="tall"] .led-score-inline { display: block !important; }
+    body.led[data-led-layout="tall"] .spot-team-score-row .led-score-slot {
+      display: block !important;
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+    }
+    body.led[data-led-layout="tall"] .spot-scores { display: none !important; }
+    body.led[data-led-layout="tall"] .spot-team .led-logo-cv,
+    body.led[data-led-layout="tall"] .led-logo-cv {
+      width: var(--logo-size) !important;
+      height: var(--logo-size) !important;
+      max-width: 45%;
+      max-height: 100%;
     }
 
-    /* iPhone landscape: large side logos + names, giant center scores */
-    @media (max-height: 500px) and (min-aspect-ratio: 1.6/1) {
-      body.led .spot-teams {
-        display: grid !important;
-        grid-template-columns: minmax(0, 0.9fr) minmax(48vw, 1.55fr) minmax(0, 0.9fr) !important;
-        flex-direction: unset;
-        align-items: stretch;
-        justify-items: stretch;
-        gap: 6px 10px;
-      }
-      body.led .spot-team {
-        display: flex !important;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        gap: 4px;
-        width: 100%;
-        min-height: 0;
-        grid-template-columns: none;
-        grid-template-areas: none;
-      }
-      body.led .spot-team-name { flex: 0 0 34%; width: 100%; }
-      body.led .spot-team-score-row {
-        flex: 1 1 0;
-        justify-content: center;
-      }
-      body.led .led-logo-cv,
-      body.led .spot-team .led-logo-cv {
-        width: min(32vh, 22vw) !important;
-        height: min(32vh, 22vw) !important;
-        max-height: 100%;
-        grid-area: auto;
-      }
-      body.led .led-score-inline { display: none !important; }
-      body.led .spot-scores { display: flex !important; height: 100%; width: 100%; }
-      body.led .spot-scores .led-score-slot {
-        height: 100%;
-        flex: 1 1 0;
-        width: auto;
-        min-width: 0;
-      }
-      body.led .spot-scores .spot-dash-slot { flex: 0 0 clamp(20px, 3vw, 40px); width: clamp(20px, 3vw, 40px); height: 45%; }
-      body.led .led-status-slot { height: 32px; width: 100%; position: relative; }
-      body.led #alert-logo,
-      body.led .alert-logo {
-        width: min(28vh, 18vw) !important;
-        height: min(28vh, 18vw) !important;
-      }
-      body.led .led-alert-label-slot { height: clamp(48px, 22vh, 88px); }
-      body.led .led-alert-team-slot { height: clamp(28px, 12vh, 48px); }
+    body.led[data-led-layout="wide"] .spot-teams,
+    body.led[data-led-layout="ultra"] .spot-teams,
+    body.led[data-led-layout="square"] .spot-teams {
+      display: grid !important;
+      grid-template-columns: minmax(0, 0.95fr) minmax(36%, 1.4fr) minmax(0, 0.95fr);
+      flex-direction: unset;
+      align-items: stretch;
+      justify-items: stretch;
+      gap: var(--spot-gap, 8px);
+      flex: 1;
+      min-height: 0;
     }
+    body.led[data-led-layout="ultra"] .spot-teams {
+      grid-template-columns: minmax(0, 0.9fr) minmax(40%, 1.55fr) minmax(0, 0.9fr);
+    }
+    body.led[data-led-layout="square"] .spot-teams {
+      grid-template-columns: minmax(0, 1fr) minmax(34%, 1.2fr) minmax(0, 1fr);
+    }
+    body.led[data-led-layout="wide"] .spot-team,
+    body.led[data-led-layout="ultra"] .spot-team,
+    body.led[data-led-layout="square"] .spot-team {
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+      min-height: 0;
+      grid-template-columns: none;
+      grid-template-areas: none;
+    }
+    body.led[data-led-layout="wide"] .led-score-inline,
+    body.led[data-led-layout="ultra"] .led-score-inline,
+    body.led[data-led-layout="square"] .led-score-inline,
+    body.led[data-led-layout="wide"] .spot-team-score-row .led-score-slot,
+    body.led[data-led-layout="ultra"] .spot-team-score-row .led-score-slot,
+    body.led[data-led-layout="square"] .spot-team-score-row .led-score-slot {
+      display: none !important;
+    }
+    body.led[data-led-layout="wide"] .spot-scores,
+    body.led[data-led-layout="ultra"] .spot-scores,
+    body.led[data-led-layout="square"] .spot-scores {
+      display: flex !important;
+      height: 100%;
+      width: 100%;
+    }
+
+    /* Viewport layout: body[data-led-layout] + CSS variables from applyLedLayout() */
 
   </style>
 </head>
@@ -2275,7 +2243,89 @@
       return Math.min(3, Math.max(1, Number.isFinite(n) ? n : DEFAULT_TICKER_X));
     }
     function tickerPps() {
-      return TICKER_BASE_PPS * (state.tickerX || DEFAULT_TICKER_X);
+      const base = TICKER_BASE_PPS * (state.tickerX || DEFAULT_TICKER_X);
+      const L = state.ledLayout;
+      if (!L) return base;
+      const scale = Math.max(1, Math.min(1.35, Math.min(L.w, L.h) / 500));
+      return base * scale;
+    }
+
+    function clampNum(n, lo, hi) {
+      return Math.max(lo, Math.min(hi, n));
+    }
+
+    function viewportSize() {
+      const w = Math.max(1, Math.round(window.innerWidth));
+      const h = Math.max(1, Math.round(window.innerHeight));
+      return { w: w, h: h, dpr: ledDpr(), aspect: w / h };
+    }
+
+    function ledLayoutMode(aspect, w, h) {
+      if (aspect < 0.85) return "tall";
+      if (aspect < 1.45) return "square";
+      if (aspect >= 2.25 && h >= 600) return "ultra";
+      return "wide";
+    }
+
+    function applyLedLayout() {
+      const { w, h, dpr, aspect } = viewportSize();
+      const mode = ledLayoutMode(aspect, w, h);
+      const short = Math.min(w, h);
+      const pad = clampNum(Math.round(short * 0.012), 4, 22);
+      let tickerH, statusH, logo;
+      if (mode === "tall") {
+        tickerH = clampNum(Math.round(h * 0.07), 44, Math.min(110, Math.round(h * 0.10)));
+        statusH = clampNum(Math.round(h * (w < 520 ? 0.06 : 0.05)), 40, 72);
+        const teamH = (h - pad * 2 - tickerH - statusH - 16) / 2;
+        logo = Math.round(Math.min(w * 0.42, teamH * 0.62, w * 0.45));
+        logo = clampNum(logo, Math.round(w * 0.30), Math.round(w * 0.45));
+      } else if (mode === "ultra") {
+        tickerH = clampNum(Math.round(h * 0.11), 44, 120);
+        statusH = clampNum(Math.round(h * 0.055), 28, 72);
+        logo = Math.round(Math.min(h * 0.38, w * 0.16, 520));
+        if (h >= 1000) logo = Math.round(Math.min(h * 0.40, w * 0.18, 640));
+      } else if (mode === "square") {
+        tickerH = clampNum(Math.round(h * 0.08), 40, 96);
+        statusH = clampNum(Math.round(h * 0.05), 28, 64);
+        logo = Math.round(Math.min(h * 0.28, w * 0.22, 360));
+      } else {
+        tickerH = clampNum(Math.round(h * 0.09), 32, 110);
+        statusH = clampNum(Math.round(h * 0.055), 36, 72);
+        logo = Math.round(Math.min(h * 0.32, w * 0.20, 420));
+      }
+      if (short >= 1400) {
+        tickerH = clampNum(Math.round(h * 0.075), 80, 168);
+        statusH = clampNum(Math.round(h * 0.04), 56, 96);
+        logo = Math.round(Math.min(h * 0.30, w * 0.16, 720));
+      }
+      const nameFlex = mode === "tall" ? 36 : 32;
+      const alertLogo = mode === "tall"
+        ? Math.round(Math.min(w * 0.42, h * 0.22))
+        : Math.round(Math.min(h * 0.30, w * 0.20, 420));
+      const alertLabelH = clampNum(Math.round(h * (mode === "tall" ? 0.14 : 0.15)), 52, 220);
+      const alertTeamH = clampNum(Math.round(h * 0.08), 28, 140);
+      const gridPitch = clampNum(Math.round((mode === "tall" ? 8 : 10) * (short / 800)), 6, 18);
+      const bezel = clampNum(Math.round(short / 160), 3, 14);
+      const spotPad = clampNum(Math.round(short * 0.01), 4, 18);
+      const spotGap = clampNum(Math.round(short * 0.01), 4, 16);
+      const root = document.documentElement;
+      const px = (n) => Math.max(1, Math.round(n)) + "px";
+      root.style.setProperty("--app-w", px(w));
+      root.style.setProperty("--app-h", px(h));
+      root.style.setProperty("--ticker-h", px(tickerH));
+      root.style.setProperty("--status-h", px(statusH));
+      root.style.setProperty("--logo-size", px(logo));
+      root.style.setProperty("--pad", px(pad));
+      root.style.setProperty("--spot-pad", px(spotPad));
+      root.style.setProperty("--spot-gap", px(spotGap));
+      root.style.setProperty("--name-flex", nameFlex + "%");
+      root.style.setProperty("--alert-logo", px(alertLogo));
+      root.style.setProperty("--alert-label-h", px(alertLabelH));
+      root.style.setProperty("--alert-team-h", px(alertTeamH));
+      root.style.setProperty("--led-pitch", px(gridPitch));
+      root.style.setProperty("--bezel", px(bezel));
+      document.body.setAttribute("data-led-layout", mode);
+      state.ledLayout = { mode: mode, w: w, h: h, dpr: dpr, aspect: aspect, tickerH: tickerH, statusH: statusH, logo: logo, pad: pad };
     }
 
     function isRanked(competitor) {
@@ -3181,9 +3231,11 @@
         const maxDevW = Math.max(1, Math.round(cssW * dpr));
         const maxDevH = Math.max(1, Math.round(cssH * dpr));
         const flat = lines.reduce((acc, runs) => acc.concat(runs), []);
-        const oneP = Math.max(1, Math.min(Math.floor(maxDevW / ledRunsCols(flat)), Math.floor(maxDevH / LED_ROWS)));
-        const twoP = Math.max(1, Math.min(Math.floor(maxDevW / Math.max(...lines.map((runs) => ledRunsCols(runs)))), Math.floor(maxDevH / rowSpan)));
-        if (oneP >= twoP && oneP >= Math.max(3, twoP + 1)) {
+        const oneP = Math.max(1, Math.min(Math.floor(maxDevW / Math.max(1, ledRunsCols(flat))), Math.floor(maxDevH / LED_ROWS)));
+        const twoP = Math.max(1, Math.min(Math.floor(maxDevW / Math.max(1, ...lines.map((runs) => ledRunsCols(runs)))), Math.floor(maxDevH / rowSpan)));
+        const twoFits = twoP * rowSpan <= maxDevH;
+        // Prefer a single sharp line when it fits, or when two lines would clip.
+        if (!twoFits || (oneP >= twoP && oneP >= 2) || (oneP > twoP)) {
           lines = [flat];
           nLines = 1;
           rowSpan = LED_ROWS;
@@ -3192,8 +3244,10 @@
       let pitch = fitLedPitch(cssH, dpr, rowSpan);
       if (fill) {
         const maxDevW = Math.max(1, Math.round(cssW * dpr));
+        const maxDevH = Math.max(1, Math.round(cssH * dpr));
         const maxCols = Math.max(...lines.map((runs) => ledRunsCols(runs)));
-        pitch = Math.max(2, Math.min(pitch, Math.floor(maxDevW / Math.max(1, maxCols))));
+        pitch = Math.min(pitch, Math.floor(maxDevW / Math.max(1, maxCols)), Math.floor(maxDevH / Math.max(1, rowSpan)));
+        pitch = Math.max(1, pitch);
       } else {
         const textWdev = Math.max(...lines.map((runs) => measureLedRuns(runs, pitch)));
         cssW = Math.max(Math.ceil(textWdev / dpr), 8);
@@ -4131,12 +4185,32 @@
     function scheduleLedRepaint() {
       if (ledResizeTimer) clearTimeout(ledResizeTimer);
       ledResizeTimer = setTimeout(() => {
+        applyLedLayout();
         paintLedTreeAfterLayout(document);
         startTickerLoop();
       }, 80);
     }
+    applyLedLayout();
     window.addEventListener("resize", scheduleLedRepaint);
     window.visualViewport?.addEventListener("resize", scheduleLedRepaint);
+    window.addEventListener("orientationchange", () => {
+      applyLedLayout();
+      scheduleLedRepaint();
+      setTimeout(scheduleLedRepaint, 250);
+    });
+    document.addEventListener("fullscreenchange", scheduleLedRepaint);
+    document.addEventListener("webkitfullscreenchange", scheduleLedRepaint);
+    let ledDprMq = null;
+    const watchLedDpr = () => {
+      if (ledDprMq) ledDprMq.removeEventListener("change", onLedDprChange);
+      ledDprMq = window.matchMedia("(resolution: " + window.devicePixelRatio + "dppx)");
+      ledDprMq.addEventListener("change", onLedDprChange);
+    };
+    function onLedDprChange() {
+      scheduleLedRepaint();
+      watchLedDpr();
+    }
+    watchLedDpr();
 
 
     let swipeX = null, swipeY = null, swipeT = 0, swipeMoved = false, swipePointer = null;
