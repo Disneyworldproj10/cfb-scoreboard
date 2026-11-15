@@ -2100,7 +2100,251 @@
       align-self: center;
     }
 
+
+    /* ---- Settings (LED-styled) ---- */
+    #settings-btn {
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 8px 10px;
+      min-width: 44px;
+      min-height: 44px;
+      color: inherit;
+      cursor: pointer;
+    }
+    body.led #settings-btn { color: #c8c8c8; }
+    .settings-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(0,0,0,0.72);
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: max(8px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px))
+               max(8px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+    }
+    .settings-overlay[hidden] { display: none !important; }
+    .settings-panel {
+      width: min(1100px, 100%);
+      max-height: 100%;
+      background: #050505;
+      border: 2px solid #1c1c1c;
+      color: #e8e8e8;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: "VT323", "Press Start 2P", monospace;
+    }
+    body.led .settings-panel {
+      background: #000;
+      border-color: #1a1a1a;
+      box-shadow: inset 0 0 0 1px #111;
+    }
+    .settings-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      flex-shrink: 0;
+      border-bottom: 1px solid #222;
+    }
+    .settings-head h2 {
+      margin: 0;
+      font-family: "Press Start 2P", monospace;
+      font-size: clamp(12px, 2.4vw, 16px);
+      letter-spacing: 0.08em;
+      color: #00ff44;
+    }
+    #settings-close {
+      min-height: 44px;
+      min-width: 88px;
+      padding: 8px 16px;
+      font-family: "Press Start 2P", monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: #000;
+      background: #00ff44;
+      border: 0;
+      cursor: pointer;
+    }
+    .settings-body {
+      overflow: auto;
+      padding: 12px 16px 28px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (min-width: 800px) {
+      .settings-body { grid-template-columns: 1fr 1fr; }
+    }
+    .sport-card {
+      border: 1px solid #222;
+      background: #080808;
+      padding: 12px 12px 14px;
+      min-width: 0;
+    }
+    .sport-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .sport-card-head h3 {
+      margin: 0;
+      font-family: "Press Start 2P", monospace;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: #ffb000;
+      line-height: 1.4;
+    }
+    .led-toggle {
+      position: relative;
+      width: 56px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+    .led-toggle input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      margin: 0;
+    }
+    .led-toggle span {
+      display: block;
+      width: 56px;
+      height: 32px;
+      background: #2a1010;
+      border: 2px solid #5a2020;
+      position: relative;
+    }
+    .led-toggle span::after {
+      content: "OFF";
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Press Start 2P", monospace;
+      font-size: 8px;
+      color: #ff5a5a;
+    }
+    .led-toggle input:checked + span {
+      background: #042a10;
+      border-color: #00ff44;
+    }
+    .led-toggle input:checked + span::after {
+      content: "ON";
+      color: #00ff44;
+    }
+    .sport-filters { display: none; }
+    .sport-card.is-on .sport-filters { display: block; }
+    .filt-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      margin: 8px 0;
+    }
+    .chk {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      font-size: 18px;
+      color: #ddd;
+      cursor: pointer;
+    }
+    .chk input { width: 20px; height: 20px; accent-color: #00ff44; flex-shrink: 0; }
+    .filt-label {
+      font-family: "Press Start 2P", monospace;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      color: #888;
+      margin: 12px 0 6px;
+    }
+    .chip-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-height: 200px;
+      overflow: auto;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 36px;
+      padding: 4px 8px;
+      border: 1px solid #333;
+      background: #111;
+      color: #ccc;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .chip input { margin: 0; accent-color: #00ff44; }
+    .chip.is-on { border-color: #00ff44; color: #00ff44; background: #042a10; }
+    .fav-search {
+      width: 100%;
+      min-height: 44px;
+      font-size: 16px;
+      padding: 8px 10px;
+      background: #111;
+      border: 1px solid #333;
+      color: #fff;
+      box-sizing: border-box;
+    }
+    .fav-results {
+      list-style: none;
+      margin: 4px 0 0;
+      padding: 0;
+      max-height: 180px;
+      overflow: auto;
+      border: 1px solid #222;
+      background: #0a0a0a;
+    }
+    .fav-results[hidden] { display: none; }
+    .fav-results li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 17px;
+    }
+    .fav-results li:hover, .fav-results li:focus { background: #1a1a1a; outline: none; }
+    .fav-results img, .fav-chip img { width: 24px; height: 24px; object-fit: contain; }
+    .fav-selected { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .fav-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border: 1px solid #00ff44;
+      color: #fff;
+      font-size: 15px;
+      min-height: 36px;
+    }
+    .fav-chip button {
+      background: transparent;
+      border: 0;
+      color: #ff5a5a;
+      font-size: 18px;
+      min-width: 28px;
+      min-height: 28px;
+      cursor: pointer;
+    }
+    .settings-hint { color: #777; font-size: 15px; margin: 4px 0 0; }
+    body.week-hidden .week-label,
+    body.week-hidden #week-select { display: none; }
+    .spot-sport-tag { display: none; }
+
     /* Viewport layout: body[data-led-layout] + CSS variables from applyLedLayout() */
+
 
   </style>
 </head>
@@ -2112,8 +2356,8 @@
       <div class="brand">
         <div class="mark" aria-hidden="true">🏈</div>
         <div>
-          <h1>CFB Scoreboard</h1>
-          <p>ACC &amp; AP Top 25 · NCAA Division I</p>
+          <h1 id="app-title">Scoreboard</h1>
+          <p id="app-sub">ACC &amp; AP Top 25 · NCAA Football</p>
         </div>
       </div>
       <div class="controls">
@@ -2132,10 +2376,8 @@
     </header>
 
     <div class="toolbar">
-      <div class="tabs" role="tablist" aria-label="Scoreboard filters">
-        <button type="button" role="tab" id="tab-all" data-filter="all" aria-selected="true">All <span class="count" id="count-all">0</span></button>
-        <button type="button" role="tab" id="tab-acc" data-filter="acc" aria-selected="false">ACC <span class="count" id="count-acc">0</span></button>
-        <button type="button" role="tab" id="tab-top25" data-filter="top25" aria-selected="false">Top 25 <span class="count" id="count-top25">0</span></button>
+      <div class="tabs" id="sport-tabs" role="tablist" aria-label="Scoreboard filters">
+        <button type="button" role="tab" data-filter="all" aria-selected="true">All <span class="count" data-count="all">0</span></button>
       </div>
       <div class="view-toggle" role="group" aria-label="View mode">
         <button type="button" id="view-rotate" aria-pressed="true">Rotate</button>
@@ -2151,6 +2393,12 @@
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
             <line x1="23" y1="9" x2="17" y2="15"/>
             <line x1="17" y1="9" x2="23" y2="15"/>
+          </svg>
+        </button>
+        <button type="button" id="settings-btn" title="Settings" aria-label="Open settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9c.2.7.8 1.2 1.5 1.3H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1.1z"/>
           </svg>
         </button>
         <button type="button" id="fs-btn" class="icon-btn" title="Fullscreen" aria-label="Toggle fullscreen" style="background:transparent;border:0;padding:8px 10px;box-shadow:none">
@@ -2208,6 +2456,16 @@
     </footer>
   </div>
 
+  <div id="settings-overlay" class="settings-overlay" hidden>
+    <div class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="settings-head">
+        <h2 id="settings-title">SETTINGS</h2>
+        <button type="button" id="settings-close">Done</button>
+      </div>
+      <div id="settings-body" class="settings-body"></div>
+    </div>
+  </div>
+
   <div id="score-alert" class="score-alert" hidden role="dialog" aria-live="assertive" aria-label="Score alert">
     <canvas id="alert-confetti"></canvas>
     <div class="led-chase led-chase-top" aria-hidden="true"></div>
@@ -2235,9 +2493,55 @@
   </div>
 
   <script>
-    const ESPN_URL = "https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard";
+    const ESPN_ORIGIN = "https://site.api.espn.com/apis/site/v2/sports";
     const ACC_CONFERENCE_ID = "1";
     const TZ = "America/New_York";
+    const SPORTS = {
+      cfb: {
+        id: "cfb", tag: "CFB", label: "NCAA Football",
+        scoreboard: ESPN_ORIGIN + "/football/college-football/scoreboard",
+        standings: "https://site.api.espn.com/apis/v2/sports/football/college-football/standings",
+        groups: "80", limit: "300", hasWeek: true, hasTop25: true, alerts: "football"
+      },
+      cbb: {
+        id: "cbb", tag: "CBB", label: "NCAA Basketball",
+        scoreboard: ESPN_ORIGIN + "/basketball/mens-college-basketball/scoreboard",
+        standings: "https://site.api.espn.com/apis/v2/sports/basketball/mens-college-basketball/standings",
+        groups: "50", limit: "400", hasWeek: false, hasTop25: true, alerts: "none"
+      },
+      nfl: {
+        id: "nfl", tag: "NFL", label: "NFL",
+        scoreboard: ESPN_ORIGIN + "/football/nfl/scoreboard",
+        teams: ESPN_ORIGIN + "/football/nfl/teams?limit=50",
+        hasWeek: false, hasTop25: false, alerts: "football", hasDivisions: true
+      },
+      mlb: {
+        id: "mlb", tag: "MLB", label: "MLB",
+        scoreboard: ESPN_ORIGIN + "/baseball/mlb/scoreboard",
+        teams: ESPN_ORIGIN + "/baseball/mlb/teams?limit=50",
+        hasWeek: false, hasTop25: false, alerts: "mlb", hasDivisions: true
+      }
+    };
+    const SPORT_ORDER = ["cfb", "cbb", "nfl", "mlb"];
+    const NFL_DIVISIONS = [
+      { id: "afc-east", league: "AFC", label: "AFC East", abbrs: ["BUF","MIA","NE","NYJ"] },
+      { id: "afc-north", league: "AFC", label: "AFC North", abbrs: ["BAL","CIN","CLE","PIT"] },
+      { id: "afc-south", league: "AFC", label: "AFC South", abbrs: ["HOU","IND","JAX","TEN"] },
+      { id: "afc-west", league: "AFC", label: "AFC West", abbrs: ["DEN","KC","LAC","LV"] },
+      { id: "nfc-east", league: "NFC", label: "NFC East", abbrs: ["DAL","NYG","PHI","WSH","WAS"] },
+      { id: "nfc-north", league: "NFC", label: "NFC North", abbrs: ["CHI","DET","GB","MIN"] },
+      { id: "nfc-south", league: "NFC", label: "NFC South", abbrs: ["ATL","CAR","NO","TB"] },
+      { id: "nfc-west", league: "NFC", label: "NFC West", abbrs: ["ARI","LAR","SF","SEA"] }
+    ];
+    const MLB_DIVISIONS = [
+      { id: "al-east", league: "AL", label: "AL East", abbrs: ["BAL","BOS","NYY","TB","TOR"] },
+      { id: "al-central", league: "AL", label: "AL Central", abbrs: ["CWS","CHW","CLE","DET","KC","MIN"] },
+      { id: "al-west", league: "AL", label: "AL West", abbrs: ["ATH","OAK","HOU","LAA","SEA","TEX"] },
+      { id: "nl-east", league: "NL", label: "NL East", abbrs: ["ATL","MIA","NYM","PHI","WSH","WAS"] },
+      { id: "nl-central", league: "NL", label: "NL Central", abbrs: ["CHC","CIN","MIL","PIT","STL"] },
+      { id: "nl-west", league: "NL", label: "NL West", abbrs: ["ARI","COL","LAD","SD","SF"] }
+    ];
+    const CATALOG_KEY = "cfb-scoreboard-catalog";
     const REFRESH_MS = 10000;
     const DEFAULT_DWELL_MS = 8000;
     const TICKER_BASE_PPS = 10; /* old default: 10 LED pitches / second */
@@ -2248,7 +2552,6 @@
     const demoMode = new URLSearchParams(location.search).has("demo");
 
     const useProxy = location.port === "8787" || new URLSearchParams(location.search).has("proxy");
-    const apiBase = useProxy ? "/api/scoreboard" : ESPN_URL;
 
     const boardEl = document.getElementById("board");
     const weekEl = document.getElementById("week-select");
@@ -2279,8 +2582,34 @@
 
     const savedPrefs = loadPrefs();
 
+    function defaultSportPref(id) {
+      if (id === "cfb") return { enabled: true, all: false, top25: true, conferences: ["1"], favorites: [], divisions: [], leagues: [] };
+      if (id === "cbb") return { enabled: false, all: false, top25: true, conferences: [], favorites: [], divisions: [], leagues: [] };
+      return { enabled: false, all: true, top25: false, conferences: [], favorites: [], divisions: [], leagues: [] };
+    }
+    function normalizeSportsPrefs(raw) {
+      const src = (raw && typeof raw === "object") ? raw : {};
+      const out = {};
+      SPORT_ORDER.forEach((id) => {
+        const d = defaultSportPref(id);
+        const s = src[id] || {};
+        out[id] = {
+          enabled: s.enabled != null ? !!s.enabled : d.enabled,
+          all: s.all != null ? !!s.all : d.all,
+          top25: s.top25 != null ? !!s.top25 : d.top25,
+          conferences: Array.isArray(s.conferences) ? s.conferences.map(String) : d.conferences.slice(),
+          favorites: Array.isArray(s.favorites) ? s.favorites.map((f) => (
+            typeof f === "object" ? { id: String(f.id), name: f.name || "", abbrev: f.abbrev || "", logo: f.logo || "" } : { id: String(f), name: "", abbrev: "", logo: "" }
+          )) : d.favorites.slice(),
+          divisions: Array.isArray(s.divisions) ? s.divisions.map(String) : d.divisions.slice(),
+          leagues: Array.isArray(s.leagues) ? s.leagues.map(String) : d.leagues.slice(),
+        };
+      });
+      return out;
+    }
+
     const state = {
-      filter: "all",
+      filter: (savedPrefs.filter && SPORTS[savedPrefs.filter]) ? savedPrefs.filter : "all",
       view: savedPrefs.view === "grid" ? "grid" : "rotate",
       week: null,
       seasonType: null,
@@ -2310,6 +2639,9 @@
       resumeView: null,
       confettiStop: null,
       audioCtx: null,
+      sports: normalizeSportsPrefs(savedPrefs.sports),
+      catalog: { cfb: { conferences: [], teams: [] }, cbb: { conferences: [], teams: [] }, nfl: { teams: [] }, mlb: { teams: [] } },
+      sportErrors: {},
     };
 
     function loadPrefs() {
@@ -2324,6 +2656,8 @@
           tickerX: state.tickerX,
           alertsOn: state.alertsOn,
           soundOn: state.soundOn,
+          filter: state.filter,
+          sports: state.sports,
         }));
       } catch {}
     }
@@ -2433,15 +2767,68 @@
       return String(competitor?.team?.conferenceId) === ACC_CONFERENCE_ID;
     }
     function isAccGame(event) {
-      return getCompetitors(event).some(isAccTeam);
+      return (event._sport || "cfb") === "cfb" && getCompetitors(event).some(isAccTeam);
     }
     function isTop25Game(event) {
       return getCompetitors(event).some(isRanked);
     }
+    function enabledSportIds() {
+      return SPORT_ORDER.filter((id) => state.sports[id] && state.sports[id].enabled);
+    }
+    function sportOf(event) {
+      return event && event._sport ? event._sport : "cfb";
+    }
+    function sportMeta(event) {
+      return SPORTS[sportOf(event)] || SPORTS.cfb;
+    }
+    function teamAbbr(competitor) {
+      return String((competitor && competitor.team && (competitor.team.abbreviation || competitor.team.shortDisplayName)) || "").toUpperCase();
+    }
+    function divisionsFor(sport) {
+      return sport === "mlb" ? MLB_DIVISIONS : NFL_DIVISIONS;
+    }
+    function teamInDivisions(sport, competitor, divIds) {
+      const set = new Set((divIds || []).map(String));
+      if (!set.size) return false;
+      const abbr = teamAbbr(competitor);
+      const id = String(competitor?.team?.id || competitor?.id || "");
+      return divisionsFor(sport).some((d) => {
+        if (!set.has(d.id)) return false;
+        if (d.abbrs.includes(abbr)) return true;
+        return (d.teamIds || []).map(String).includes(id);
+      });
+    }
+    function teamInLeagues(sport, competitor, leagues) {
+      const set = new Set((leagues || []).map(String));
+      if (!set.size) return false;
+      const abbr = teamAbbr(competitor);
+      return divisionsFor(sport).some((d) => set.has(d.league) && d.abbrs.includes(abbr));
+    }
+    function matchesSportSettings(event) {
+      const id = sportOf(event);
+      const pref = state.sports[id];
+      if (!pref || !pref.enabled) return false;
+      if (pref.all) return true;
+      const teams = getCompetitors(event);
+      if (pref.top25 && isTop25Game(event)) return true;
+      const confs = (pref.conferences || []).map(String);
+      if (confs.length && teams.some((c) => confs.includes(String(c?.team?.conferenceId || "")))) return true;
+      const favs = (pref.favorites || []).map((f) => String(f.id || f));
+      if (favs.length && teams.some((c) => favs.includes(String(c?.team?.id || c?.id || "")))) return true;
+      if ((pref.divisions || []).length && teams.some((c) => teamInDivisions(id, c, pref.divisions))) return true;
+      if ((pref.leagues || []).length && teams.some((c) => teamInLeagues(id, c, pref.leagues))) return true;
+      return false;
+    }
     function matchesFilter(event, filter) {
-      if (filter === "acc") return isAccGame(event);
-      if (filter === "top25") return isTop25Game(event);
-      return isAccGame(event) || isTop25Game(event);
+      if (!matchesSportSettings(event)) return false;
+      const f = filter || state.filter || "all";
+      if (f === "all" || f === "acc" || f === "top25") {
+        // legacy tab names: treat as All of the settings union
+        if (f === "acc") return isAccGame(event);
+        if (f === "top25") return isTop25Game(event);
+        return true;
+      }
+      return sportOf(event) === f;
     }
     function getCompetition(event) {
       return (event.competitions && event.competitions[0]) || {};
@@ -2461,7 +2848,10 @@
       return "upcoming";
     }
     function gameId(event) {
-      return String(event?.id || getCompetition(event).id || "");
+      const raw = String(event?.id || getCompetition(event).id || "");
+      const sport = sportOf(event);
+      if (!raw) return "";
+      return raw.indexOf(":") >= 0 ? raw : sport + ":" + raw;
     }
 
     function formatKickoff(iso) {
@@ -2501,6 +2891,20 @@
       );
     }
 
+    function baseballSituation(event) {
+      const sit = getCompetition(event).situation || {};
+      const parts = [];
+      if (sit.outs != null && sit.outs !== "") {
+        const n = Number(sit.outs);
+        parts.push(n + (n === 1 ? " OUT" : " OUTS"));
+      }
+      if (sit.balls != null && sit.strikes != null) {
+        parts.push(sit.balls + "-" + sit.strikes);
+      }
+      const bases = [sit.onFirst && "1B", sit.onSecond && "2B", sit.onThird && "3B"].filter(Boolean);
+      if (bases.length) parts.push(bases.join(" "));
+      return parts.join(" · ");
+    }
     function statusLabel(event) {
       const comp = getCompetition(event);
       const bucket = statusBucket(event);
@@ -2511,6 +2915,11 @@
         return timeValid ? kick : (kick.split(" · ")[0] + " · TBD");
       }
       if (bucket === "final") return type.detail || type.shortDetail || "Final";
+      if (sportOf(event) === "mlb") {
+        const inning = type.detail || type.shortDetail || "Live";
+        const extra = baseballSituation(event);
+        return extra ? inning + " · " + extra : inning;
+      }
       return type.detail || type.shortDetail || "Live";
     }
 
@@ -2527,24 +2936,64 @@
       return rec?.summary || "";
     }
 
-    function buildUrl() {
+    function buildSportUrl(id) {
       // Avoid cache: "no-store" — it forces a Cache-Control request header,
       // which triggers an OPTIONS preflight that ESPN rejects (403). A cache
       // buster keeps refreshes fresh without leaving the "simple GET" path.
-      const params = new URLSearchParams({ groups: "80", limit: "300" });
-      if (state.week) params.set("week", String(state.week));
-      if (state.seasonType) params.set("seasontype", String(state.seasonType));
+      const cfg = SPORTS[id];
+      const params = new URLSearchParams();
+      if (cfg.groups) params.set("groups", cfg.groups);
+      if (cfg.limit) params.set("limit", cfg.limit);
+      if (cfg.hasWeek && state.week) params.set("week", String(state.week));
+      if (cfg.hasWeek && state.seasonType) params.set("seasontype", String(state.seasonType));
       params.set("_", String(Date.now()));
-      return apiBase + "?" + params.toString();
+      return cfg.scoreboard + "?" + params.toString();
     }
 
-    async function fetchScoreboard() {
-      const res = await fetch(buildUrl());
+    async function fetchJson(url) {
+      const res = await fetch(url);
       if (!res.ok) throw new Error("ESPN API returned " + res.status);
       return res.json();
     }
 
+    async function fetchScoreboard() {
+      const ids = enabledSportIds();
+      state.sportErrors = {};
+      if (!ids.length) return { events: [], leagues: [] };
+      const settled = await Promise.allSettled(ids.map(async (id) => {
+        const data = await fetchJson(buildSportUrl(id));
+        const events = (data.events || []).map((ev) => {
+          const copy = Object.assign({}, ev, { _sport: id });
+          const comps = (((copy.competitions || [])[0] || {}).competitors) || [];
+          comps.forEach((c) => { if (c.team) c.team._sport = id; });
+          return copy;
+        });
+        return { id: id, data: data, events: events };
+      }));
+      const events = [];
+      let cfbData = null;
+      const errors = [];
+      settled.forEach((res, i) => {
+        const id = ids[i];
+        if (res.status === "fulfilled") {
+          events.push(...res.value.events);
+          if (id === "cfb") cfbData = res.value.data;
+        } else {
+          state.sportErrors[id] = (res.reason && res.reason.message) || "Failed";
+          errors.push((SPORTS[id].tag) + ": " + state.sportErrors[id]);
+        }
+      });
+      return { events: events, leagues: (cfbData && cfbData.leagues) || [], week: cfbData && cfbData.week, season: cfbData && cfbData.season, _cfb: cfbData, _errors: errors };
+    }
+
     function populateCalendar(data) {
+      if (!data || !data._cfb && !(data.leagues && data.leagues[0] && data.leagues[0].calendar)) {
+        if (!enabledSportIds().includes("cfb")) {
+          document.body.classList.add("week-hidden");
+          return;
+        }
+      }
+      document.body.classList.toggle("week-hidden", !enabledSportIds().includes("cfb"));
       const league = (data.leagues || [])[0] || {};
       const calendar = league.calendar || [];
       state.calendar = calendar;
@@ -2677,39 +3126,59 @@
     }
 
 
-    function bumpNcaaLogoUrl(url, dark) {
+    function bumpLogoUrl(url, dark) {
       let u = String(url || "");
       if (!u) return "";
       const folder = dark ? "500-dark" : "500";
-      u = u.replace(/\/ncaa\/(?:\d+|500(?:-dark)?)\//g, "/ncaa/" + folder + "/");
-      u = u.replace(/(\/i\/teamlogos\/ncaa\/)(?:\d+|500(?:-dark)?)(\/)/g, "$1" + folder + "$2");
+      u = u.replace(/(\/i\/teamlogos\/)(ncaa|nfl|mlb)\/(?:500(?:-dark)?|\d+)(?:\/scoreboard)?\//g, "$1$2/" + folder + "/");
       u = u.replace(/[?&]w=\d+/g, "");
       return u;
     }
+    function bumpNcaaLogoUrl(url, dark) { return bumpLogoUrl(url, dark); }
     function teamLetters(team, name) {
       const abbrev = (team && team.abbreviation) || "";
       const n = name || (team && (team.shortDisplayName || team.location || team.displayName)) || "?";
       return (abbrev || n || "?").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5) || String(n).toUpperCase().slice(0, 4);
     }
+    function inferLogoLeague(team) {
+      const urls = [];
+      if (team && team.logo) urls.push(team.logo);
+      if (team && team.logoDark) urls.push(team.logoDark);
+      if (team && Array.isArray(team.logos)) {
+        team.logos.forEach((l) => urls.push((l && (l.href || l.url)) || ""));
+      }
+      const blob = urls.join(" ").toLowerCase();
+      const sport = team && team._sport;
+      if (/\/nfl\//.test(blob) || sport === "nfl") return "nfl";
+      if (/\/mlb\//.test(blob) || sport === "mlb") return "mlb";
+      if (/\/ncaa\//.test(blob) || sport === "cfb" || sport === "cbb") return "ncaa";
+      return sport ? "ncaa" : "ncaa";
+    }
     function hiResLogo(team) {
       if (!team) return { src: "", fallbackSrc: "" };
       const id = team.id != null ? String(team.id) : "";
       const numeric = /^\d+$/.test(id);
+      const abbr = String(team.abbreviation || team.abbrev || "").toLowerCase();
+      const league = inferLogoLeague(team);
       const logos = Array.isArray(team.logos) ? team.logos : [];
       const href = (l) => (l && (l.href || l.url)) || "";
       const rel = (l) => (Array.isArray(l.rel) ? l.rel.join(" ") : String(l.rel || "")).toLowerCase();
       const dark = logos.find((l) => /dark/.test(rel(l)) || /dark/.test(href(l)));
       const any = dark || logos.find((l) => /full|default/.test(rel(l))) || logos[0];
+      const fromArray = href(dark) || href(any);
+      const existing = team.logoDark || fromArray || team.logo || "";
       let src = "", fallbackSrc = "";
-      if (dark) {
-        src = bumpNcaaLogoUrl(href(dark), true) || href(dark);
-        fallbackSrc = bumpNcaaLogoUrl(href(any), false) || (numeric ? "https://a.espncdn.com/i/teamlogos/ncaa/500/" + id + ".png" : (team.logo || ""));
+      if (existing) {
+        src = bumpLogoUrl(existing, true) || existing;
+        const lite = team.logo || fromArray || existing;
+        fallbackSrc = bumpLogoUrl(lite, false) || lite;
+      } else if (league === "nfl" || league === "mlb") {
+        const code = abbr || id;
+        src = "https://a.espncdn.com/i/teamlogos/" + league + "/500-dark/" + code + ".png";
+        fallbackSrc = "https://a.espncdn.com/i/teamlogos/" + league + "/500/" + code + ".png";
       } else if (numeric) {
         src = "https://a.espncdn.com/i/teamlogos/ncaa/500-dark/" + id + ".png";
         fallbackSrc = "https://a.espncdn.com/i/teamlogos/ncaa/500/" + id + ".png";
-      } else {
-        src = bumpNcaaLogoUrl(team.logoDark || href(any) || team.logo, !!team.logoDark) || team.logoDark || href(any) || team.logo || "";
-        fallbackSrc = team.logo && team.logo !== src ? bumpNcaaLogoUrl(team.logo, false) : "";
       }
       if (fallbackSrc === src) fallbackSrc = "";
       return { src: src, fallbackSrc: fallbackSrc };
@@ -2777,6 +3246,8 @@
         const gid = gameId(ev);
         const prevTeams = oldSnap[gid];
         if (!prevTeams) continue;
+        const mode = (sportMeta(ev).alerts || "none");
+        if (mode === "none") continue;
         for (const c of getCompetitors(ev)) {
           const tid = teamKey(c);
           if (!tid || !Object.prototype.hasOwnProperty.call(prevTeams, tid)) continue;
@@ -2785,6 +3256,10 @@
           if (prevScore == null || nextScore == null) continue;
           const delta = nextScore - prevScore;
           if (delta <= 0) continue;
+          if (mode === "mlb") {
+            alerts.push({ gameId: gid, teamId: tid, delta: delta, kind: "FOCUS", label: "", team: c.team || {}, silent: true });
+            continue;
+          }
           const classified = classifyScoreChange(delta, playTextOf(ev), gid, tid);
           if (!classified || classified.skip) continue;
           alerts.push({
@@ -3047,11 +3522,13 @@
       state.alertActive = true;
       stopRotate();
       focusAlertGame(item.gameId, 1);
-      showScoreAlert(item);
-      await waitAlert(ALERT_MS);
-      if (gen !== state.alertGen) return;
-      hideScoreAlert();
-      await waitAlert(420);
+      if (!item.silent) {
+        showScoreAlert(item);
+        await waitAlert(ALERT_MS);
+        if (gen !== state.alertGen) return;
+        hideScoreAlert();
+        await waitAlert(420);
+      }
       if (gen !== state.alertGen) return;
       // Hold the updated game for a normal dwell, then continue the queue.
       if (state.view === "rotate") restartProgress();
@@ -3566,7 +4043,8 @@
       else if (isFinal) { status = "FINAL"; sc = "#00ff44"; }
       else { status = String(statusLabel(event) || "UPCOMING").toUpperCase(); sc = "#3ecbff"; }
       return [
-        { t: "  " + abbr(away) + " ", c: "#ffffff" },
+        { t: "  " + sportMeta(event).tag + " ", c: "#3ecbff" },
+        { t: abbr(away) + " ", c: "#ffffff" },
         { t: scoreOf(away), c: scoreLedColor(away, isFinal, isPre) },
         { t: "  " + abbr(home) + " ", c: "#ffffff" },
         { t: scoreOf(home), c: scoreLedColor(home, isFinal, isPre) },
@@ -3672,9 +4150,9 @@
       const footLeft = isLive
         ? (sit.downDistanceText || sit.possessionText || (sit.lastPlay && sit.lastPlay.text) || "")
         : (comp.venue && comp.venue.fullName ? comp.venue.fullName : "");
-      const tags = [];
+      const tags = [sportMeta(event).tag];
       if (isAccGame(event)) tags.push("ACC");
-      if (isTop25Game(event)) tags.push("Top 25");
+      if (isTop25Game(event) && sportMeta(event).hasTop25) tags.push("Top 25");
 
       return (
         '<article class="card ' + bucket + '-card">' +
@@ -3755,7 +4233,9 @@
       const showStatus = label && label.toLowerCase() !== badgeText.toLowerCase();
       const sit = comp.situation || {};
       const situation = isLive
-        ? (sit.downDistanceText || sit.possessionText || (sit.lastPlay && sit.lastPlay.text) || "")
+        ? (sportOf(event) === "mlb"
+          ? baseballSituation(event)
+          : (sit.downDistanceText || sit.possessionText || (sit.lastPlay && sit.lastPlay.text) || ""))
         : "";
       const venue = comp.venue && comp.venue.fullName ? comp.venue.fullName : "";
       const tags = [];
@@ -3771,6 +4251,8 @@
       const midBits = situation || "";
       const line1 = [];
       const line2 = [];
+      const sportTag = sportMeta(event).tag;
+      line1.push({ t: sportTag + "  ", c: "#3ecbff" });
       if (isLive) line1.push({ t: "LIVE  ", c: "#ff2a2a" });
       else if (isFinal) line1.push({ t: "FINAL  ", c: "#00ff44" });
       else line1.push({ t: "UPCOMING  ", c: "#3ecbff" });
@@ -3809,12 +4291,51 @@
     }
 
     function updateCounts() {
-      const acc = state.events.filter(isAccGame).length;
-      const top = state.events.filter(isTop25Game).length;
-      const all = state.events.filter((e) => isAccGame(e) || isTop25Game(e)).length;
-      document.getElementById("count-all").textContent = all;
-      document.getElementById("count-acc").textContent = acc;
-      document.getElementById("count-top25").textContent = top;
+      const all = filteredGames("all").length;
+      const elAll = document.querySelector("[data-count=\"all\"]");
+      if (elAll) elAll.textContent = all;
+      enabledSportIds().forEach((id) => {
+        const el = document.querySelector('[data-count="' + id + '"]');
+        if (el) el.textContent = filteredGames(id).length;
+      });
+    }
+
+    function renderSportTabs() {
+      const tabs = document.getElementById("sport-tabs");
+      if (!tabs) return;
+      const ids = enabledSportIds();
+      if (state.filter !== "all" && !ids.includes(state.filter)) state.filter = "all";
+      const btn = (filter, label) => {
+        const selected = state.filter === filter;
+        return '<button type="button" role="tab" data-filter="' + filter + '" aria-selected="' + (selected ? "true" : "false") + '">' +
+          escapeHtml(label) + ' <span class="count" data-count="' + filter + '">0</span></button>';
+      };
+      tabs.innerHTML = btn("all", "All") + ids.map((id) => btn(id, SPORTS[id].tag)).join("");
+      updateCounts();
+    }
+
+    function updateBrand() {
+      const ids = enabledSportIds();
+      const title = document.getElementById("app-title");
+      const sub = document.getElementById("app-sub");
+      if (title) title.textContent = "Scoreboard";
+      if (sub) {
+        if (ids.length === 1 && ids[0] === "cfb") {
+          const p = state.sports.cfb;
+          const bits = [];
+          if (p.top25) bits.push("AP Top 25");
+          (p.conferences || []).forEach((id) => {
+            const c = (state.catalog.cfb.conferences || []).find((x) => String(x.id) === String(id));
+            bits.push(c ? (c.short || c.abbr || c.name) : (id === "1" ? "ACC" : "Conf " + id));
+          });
+          if (p.all) bits.push("All games");
+          sub.textContent = (bits.join(" · ") || "NCAA Football") + " · NCAA Football";
+        } else if (!ids.length) {
+          sub.textContent = "No sports enabled · open Settings";
+        } else {
+          sub.textContent = ids.map((id) => SPORTS[id].label).join(" · ");
+        }
+      }
     }
 
     function resolveIndex(games) {
@@ -3898,13 +4419,32 @@
       }
     }
 
+    function noGamesBoardHtml() {
+      const ids = state.filter && state.filter !== "all" ? [state.filter] : enabledSportIds();
+      const lines = (ids.length ? ids : SPORT_ORDER).map((id) => {
+        const cfg = SPORTS[id];
+        if (!cfg) return null;
+        const err = state.sportErrors[id];
+        if (err) return { t: cfg.tag + "  ERROR", c: "#ff2a2a" };
+        return { t: cfg.tag + "  NO GAMES", c: "#ffb000" };
+      }).filter(Boolean);
+      if (!lines.length) lines.push({ t: "NO GAMES", c: "#ffb000" });
+      const hint = enabledSportIds().length ? "Nothing matched your filters right now." : "Open Settings to choose sports.";
+      return '<div class="msg no-games-led" style="margin:auto;width:min(96%,720px);text-align:center">' +
+        lines.map((ln, i) => '<div class="led-status-slot" style="height:56px;width:100%;position:relative;margin:8px 0">' +
+          ledCanvas("led-text-cv", { "data-text": ln.t, "data-color": ln.c, "data-led-align": "center" }, "led-text-cv led-fill") +
+        "</div>").join("") +
+        "<p>" + escapeHtml(hint) + "</p></div>";
+    }
+
     function showResolvedSpotlight(animDir) {
       const games = filteredGames();
       if (!games.length) {
         state.currentGameId = null;
         stageEl.classList.remove("anim-next", "anim-prev");
         stageEl.innerHTML =
-          '<div class="msg" style="margin:auto;max-width:420px"><h2>No games in this view</h2><p>Nothing matched this filter for the selected week. Try another week or tab.</p></div>';
+          noGamesBoardHtml();
+        paintLedTreeAfterLayout(stageEl);
         updateRotateChrome(games, -1);
         progressBar.classList.remove("run");
         stopRotate();
@@ -3946,7 +4486,8 @@
       }
       if (!games.length) {
         gridView.innerHTML =
-          '<div class="msg"><h2>No games in this view</h2><p>Nothing matched this filter for the selected week. Try another week or tab.</p></div>';
+          noGamesBoardHtml();
+        paintLedTreeAfterLayout(gridView);
         return;
       }
       const groups = { live: [], final: [], upcoming: [] };
@@ -4121,7 +4662,12 @@
         const wasSkip = state.skipAlerts;
         state.skipAlerts = false;
         populateCalendar(data);
+        renderSportTabs();
+        updateBrand();
         state.lastUpdated = new Date();
+        if (data._errors && data._errors.length && !incoming.length) {
+          throw new Error(data._errors.join(" · "));
+        }
         boardEl.setAttribute("aria-busy", "false");
         if (!wasSkip && alerts.length) enqueueAlerts(alerts);
         render();
@@ -4139,35 +4685,38 @@
       }
     }
 
-    document.querySelectorAll(".tabs button").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.filter = btn.dataset.filter;
-        document.querySelectorAll(".tabs button").forEach((b) =>
-          b.setAttribute("aria-selected", b === btn ? "true" : "false")
-        );
-        const games = filteredGames();
-        if (!games.some((g) => gameId(g) === String(state.currentGameId))) {
-          state.currentGameId = games[0] ? gameId(games[0]) : null;
-        }
-        state.alertQueue = state.alertQueue.filter((it) =>
-          games.some((g) => gameId(g) === String(it.gameId))
-        );
-        if (state.alertActive) {
-          const ev = state.events.find((e) => gameId(e) === String(state.currentGameId));
-          if (!ev || !matchesFilter(ev, state.filter)) clearAlerts();
-        }
-        if (state.alertActive) {
-          updateCounts();
-          return;
-        }
-        if (state.view === "rotate") {
-          showResolvedSpotlight(0);
-          if (!state.paused) scheduleRotate();
-        } else {
-          renderGrid();
-        }
+    function applyFilterTab(filter) {
+      state.filter = filter || "all";
+      document.querySelectorAll(".tabs button").forEach((b) =>
+        b.setAttribute("aria-selected", b.dataset.filter === state.filter ? "true" : "false")
+      );
+      const games = filteredGames();
+      if (!games.some((g) => gameId(g) === String(state.currentGameId))) {
+        state.currentGameId = games[0] ? gameId(games[0]) : null;
+      }
+      state.alertQueue = state.alertQueue.filter((it) =>
+        games.some((g) => gameId(g) === String(it.gameId))
+      );
+      if (state.alertActive) {
+        const ev = state.events.find((e) => gameId(e) === String(state.currentGameId));
+        if (!ev || !matchesFilter(ev, state.filter)) clearAlerts();
+      }
+      if (state.alertActive) {
         updateCounts();
-      });
+        return;
+      }
+      if (state.view === "rotate") {
+        showResolvedSpotlight(0);
+        if (!state.paused) scheduleRotate();
+      } else {
+        renderGrid();
+      }
+      updateCounts();
+    }
+    document.getElementById("sport-tabs").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-filter]");
+      if (!btn) return;
+      applyFilterTab(btn.dataset.filter);
     });
 
     document.getElementById("view-rotate").addEventListener("click", () => setView("rotate"));
@@ -4208,6 +4757,8 @@
     document.addEventListener("keydown", (e) => {
       const tag = (e.target && e.target.tagName) || "";
       if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+      if (e.key === "Escape" && settingsOpen()) { closeSettings(); return; }
+      if (settingsOpen()) return;
       if (e.key === "t" || e.key === "T") {
         e.preventDefault();
         window.__cfbDemo.simulateBoth();
@@ -4306,7 +4857,7 @@
 
 
     let swipeX = null, swipeY = null, swipeT = 0, swipeMoved = false, swipePointer = null;
-    const swipeIgnore = "a, button, input, select, textarea, label, .topbar, .rotate-bar, .rot-progress";
+    const swipeIgnore = "a, button, input, select, textarea, label, .topbar, .rotate-bar, .rot-progress, .settings-overlay";
     function pointerOnChrome(target) {
       return !!(target && target.closest && target.closest(swipeIgnore));
     }
@@ -4344,6 +4895,346 @@
       swipeY = null;
       swipePointer = null;
     }, { passive: true });
+
+
+    /* ---------- Settings + conference/team catalogs ---------- */
+    const settingsOverlay = document.getElementById("settings-overlay");
+    const settingsBody = document.getElementById("settings-body");
+    const settingsBtn = document.getElementById("settings-btn");
+    const settingsClose = document.getElementById("settings-close");
+
+    function settingsOpen() {
+      return !!(settingsOverlay && !settingsOverlay.hidden);
+    }
+
+    function loadCatalogCache() {
+      try {
+        const raw = JSON.parse(localStorage.getItem(CATALOG_KEY) || "null");
+        if (raw && raw.cfb && raw.savedAt && (Date.now() - raw.savedAt) < 7 * 24 * 60 * 60 * 1000) {
+          SPORT_ORDER.forEach((id) => {
+            if (raw[id]) state.catalog[id] = raw[id];
+          });
+        }
+      } catch {}
+    }
+    function saveCatalogCache() {
+      try {
+        localStorage.setItem(CATALOG_KEY, JSON.stringify(Object.assign({ savedAt: Date.now() }, state.catalog)));
+      } catch {}
+    }
+
+    function parseStandingsCatalog(data) {
+      const conferences = [];
+      const teams = [];
+      const seen = new Set();
+      (data.children || []).forEach((conf) => {
+        const cid = String(conf.id || "");
+        if (!cid) return;
+        conferences.push({
+          id: cid,
+          name: conf.name || conf.shortName || cid,
+          short: conf.shortName || conf.abbreviation || conf.name || cid,
+          abbr: (conf.abbreviation || conf.shortName || "").toUpperCase()
+        });
+        let entries = [];
+        const st = conf.standings;
+        if (st && Array.isArray(st)) st.forEach((s) => { entries = entries.concat(s.entries || []); });
+        else if (st && st.entries) entries = st.entries;
+        entries.forEach((en) => {
+          const tm = en.team || {};
+          const tid = String(tm.id || "");
+          if (!tid || seen.has(tid)) return;
+          seen.add(tid);
+          const logos = tm.logos || [];
+          const dark = logos.find((l) => /dark/.test((l.rel || []).join(" "))) || logos[0];
+          teams.push({
+            id: tid,
+            name: tm.displayName || tm.shortDisplayName || tm.name || tid,
+            abbrev: (tm.abbreviation || "").toUpperCase(),
+            logo: (dark && dark.href) || "",
+            conferenceId: cid
+          });
+        });
+      });
+      conferences.sort((a, b) => a.name.localeCompare(b.name));
+      teams.sort((a, b) => a.name.localeCompare(b.name));
+      return { conferences: conferences, teams: teams };
+    }
+
+    function parseTeamsCatalog(data, sport) {
+      const sports = data.sports || [];
+      const teams = [];
+      sports.forEach((s) => (s.leagues || []).forEach((lg) => (lg.teams || []).forEach((item) => {
+        const tm = item.team || item;
+        const tid = String(tm.id || "");
+        if (!tid) return;
+        const logos = tm.logos || [];
+        const dark = logos.find((l) => /dark/.test((Array.isArray(l.rel) ? l.rel.join(" ") : "") + " " + (l.href || ""))) || logos[0];
+        teams.push({
+          id: tid,
+          name: tm.displayName || tm.shortDisplayName || tm.name || tid,
+          abbrev: (tm.abbreviation || "").toUpperCase(),
+          logo: (dark && dark.href) || tm.logo || ""
+        });
+      })));
+      teams.sort((a, b) => a.name.localeCompare(b.name));
+      // attach known divisions
+      const divs = divisionsFor(sport);
+      teams.forEach((tm) => {
+        const d = divs.find((x) => x.abbrs.includes(tm.abbrev));
+        if (d) { tm.divisionId = d.id; tm.league = d.league; d.teamIds = d.teamIds || []; if (!d.teamIds.includes(tm.id)) d.teamIds.push(tm.id); }
+      });
+      return { teams: teams };
+    }
+
+    async function ensureCatalog(id) {
+      const cfg = SPORTS[id];
+      const cat = state.catalog[id] || (state.catalog[id] = {});
+      if (cfg.hasTop25 && cat.conferences && cat.conferences.length) return cat;
+      if (cfg.hasDivisions && cat.teams && cat.teams.length) return cat;
+      try {
+        if (cfg.standings) {
+          const data = await fetchJson(cfg.standings);
+          const parsed = parseStandingsCatalog(data);
+          state.catalog[id] = parsed;
+        } else if (cfg.teams) {
+          const data = await fetchJson(cfg.teams);
+          state.catalog[id] = parseTeamsCatalog(data, id);
+        }
+        saveCatalogCache();
+      } catch (err) {
+        console.warn("catalog", id, err);
+      }
+      return state.catalog[id];
+    }
+
+    function favLogo(f) {
+      return f.logo ? '<img src="' + escapeHtml(f.logo) + '" alt="">' : "";
+    }
+
+    function renderSettings() {
+      if (!settingsBody) return;
+      settingsBody.innerHTML = SPORT_ORDER.map((id) => sportCardHtml(id)).join("");
+      bindSettings();
+    }
+
+    function sportCardHtml(id) {
+      const cfg = SPORTS[id];
+      const pref = state.sports[id];
+      const cat = state.catalog[id] || {};
+      const on = pref.enabled ? " is-on" : "";
+      let filters = "";
+      filters += '<div class="filt-row">';
+      filters += '<label class="chk"><input type="checkbox" data-sport="' + id + '" data-field="all"' + (pref.all ? " checked" : "") + '> All games</label>';
+      if (cfg.hasTop25) {
+        filters += '<label class="chk"><input type="checkbox" data-sport="' + id + '" data-field="top25"' + (pref.top25 ? " checked" : "") + '> Top 25</label>';
+      }
+      filters += "</div>";
+      if (cfg.hasTop25) {
+        const confs = cat.conferences || [];
+        filters += '<div class="filt-label">CONFERENCES</div>';
+        if (!confs.length) filters += '<p class="settings-hint">Loading conferences…</p>';
+        filters += '<div class="chip-grid" data-confs="' + id + '">' + confs.map((c) => {
+          const checked = (pref.conferences || []).map(String).includes(String(c.id));
+          return '<label class="chip' + (checked ? " is-on" : "") + '"><input type="checkbox" data-sport="' + id + '" data-conf="' + escapeHtml(String(c.id)) + '"' + (checked ? " checked" : "") + '> ' + escapeHtml(c.short || c.name) + "</label>";
+        }).join("") + "</div>";
+      }
+      if (cfg.hasDivisions) {
+        filters += '<div class="filt-label">CONFERENCE / DIVISION</div>';
+        const leagues = id === "mlb" ? ["AL","NL"] : ["AFC","NFC"];
+        filters += '<div class="filt-row">' + leagues.map((lg) => {
+          const checked = (pref.leagues || []).includes(lg);
+          return '<label class="chk"><input type="checkbox" data-sport="' + id + '" data-league="' + lg + '"' + (checked ? " checked" : "") + '> ' + lg + "</label>";
+        }).join("") + "</div>";
+        filters += '<div class="chip-grid">' + divisionsFor(id).map((d) => {
+          const checked = (pref.divisions || []).includes(d.id);
+          return '<label class="chip' + (checked ? " is-on" : "") + '"><input type="checkbox" data-sport="' + id + '" data-div="' + d.id + '"' + (checked ? " checked" : "") + '> ' + escapeHtml(d.label) + "</label>";
+        }).join("") + "</div>";
+      }
+      filters += '<div class="filt-label">FAVORITES</div>';
+      filters += '<input class="fav-search" type="search" autocomplete="off" placeholder="Search teams…" data-fav-search="' + id + '">';
+      filters += '<ul class="fav-results" hidden data-fav-results="' + id + '"></ul>';
+      filters += '<div class="fav-selected" data-fav-selected="' + id + '">' + (pref.favorites || []).map((f) => favChipHtml(id, f)).join("") + "</div>";
+      filters += '<p class="settings-hint">A game appears if it matches any selected filter.</p>';
+      return '<section class="sport-card' + on + '" data-sport-card="' + id + '">' +
+        '<div class="sport-card-head"><h3>' + escapeHtml(cfg.label) + '</h3>' +
+        '<label class="led-toggle"><input type="checkbox" data-sport-enable="' + id + '"' + (pref.enabled ? " checked" : "") + '><span></span></label></div>' +
+        '<div class="sport-filters">' + filters + "</div></section>";
+    }
+
+    function favChipHtml(sport, f) {
+      const label = escapeHtml(f.abbrev || f.name || f.id);
+      return '<span class="fav-chip" data-fav-id="' + escapeHtml(String(f.id)) + '">' + favLogo(f) + label +
+        '<button type="button" data-sport="' + sport + '" data-unfav="' + escapeHtml(String(f.id)) + '" aria-label="Remove ' + label + '">×</button></span>';
+    }
+
+    function bindSettings() {
+      settingsBody.querySelectorAll("[data-sport-enable]").forEach((inp) => {
+        inp.addEventListener("change", () => {
+          const id = inp.getAttribute("data-sport-enable");
+          state.sports[id].enabled = inp.checked;
+          settingsBody.querySelector('[data-sport-card="' + id + '"]').classList.toggle("is-on", inp.checked);
+          persistAndRefresh();
+        });
+      });
+      settingsBody.querySelectorAll("[data-field]").forEach((inp) => {
+        inp.addEventListener("change", () => {
+          const id = inp.getAttribute("data-sport");
+          state.sports[id][inp.getAttribute("data-field")] = inp.checked;
+          persistAndRefresh();
+        });
+      });
+      settingsBody.querySelectorAll("[data-conf]").forEach((inp) => {
+        inp.addEventListener("change", () => {
+          const id = inp.getAttribute("data-sport");
+          const cid = String(inp.getAttribute("data-conf"));
+          const arr = state.sports[id].conferences;
+          const i = arr.indexOf(cid);
+          if (inp.checked && i < 0) arr.push(cid);
+          if (!inp.checked && i >= 0) arr.splice(i, 1);
+          inp.closest(".chip").classList.toggle("is-on", inp.checked);
+          persistAndRefresh();
+        });
+      });
+      settingsBody.querySelectorAll("[data-div]").forEach((inp) => {
+        inp.addEventListener("change", () => {
+          const id = inp.getAttribute("data-sport");
+          const did = inp.getAttribute("data-div");
+          const arr = state.sports[id].divisions;
+          const i = arr.indexOf(did);
+          if (inp.checked && i < 0) arr.push(did);
+          if (!inp.checked && i >= 0) arr.splice(i, 1);
+          inp.closest(".chip").classList.toggle("is-on", inp.checked);
+          persistAndRefresh();
+        });
+      });
+      settingsBody.querySelectorAll("[data-league]").forEach((inp) => {
+        inp.addEventListener("change", () => {
+          const id = inp.getAttribute("data-sport");
+          const lg = inp.getAttribute("data-league");
+          const arr = state.sports[id].leagues;
+          const i = arr.indexOf(lg);
+          if (inp.checked && i < 0) arr.push(lg);
+          if (!inp.checked && i >= 0) arr.splice(i, 1);
+          persistAndRefresh();
+        });
+      });
+      settingsBody.querySelectorAll("[data-unfav]").forEach((btn) => {
+        btn.addEventListener("click", () => removeFavorite(btn.getAttribute("data-sport"), btn.getAttribute("data-unfav")));
+      });
+      settingsBody.querySelectorAll("[data-fav-search]").forEach((inp) => {
+        inp.addEventListener("input", () => renderFavResults(inp.getAttribute("data-fav-search"), inp.value));
+        inp.addEventListener("focus", () => renderFavResults(inp.getAttribute("data-fav-search"), inp.value));
+      });
+      document.addEventListener("click", hideFavOnOutside, true);
+    }
+
+    function hideFavOnOutside(e) {
+      if (!settingsOpen()) return;
+      if (e.target.closest("[data-fav-search], [data-fav-results], [data-unfav]")) return;
+      settingsBody.querySelectorAll("[data-fav-results]").forEach((el) => { el.hidden = true; });
+    }
+
+    function renderFavResults(sport, q) {
+      const box = settingsBody.querySelector('[data-fav-results="' + sport + '"]');
+      if (!box) return;
+      const query = String(q || "").trim().toLowerCase();
+      const favIds = new Set((state.sports[sport].favorites || []).map((f) => String(f.id)));
+      let teams = (state.catalog[sport] && state.catalog[sport].teams) || [];
+      if (query) {
+        teams = teams.filter((tm) => (tm.name + " " + tm.abbrev + " " + tm.id).toLowerCase().includes(query));
+      }
+      teams = teams.filter((tm) => !favIds.has(String(tm.id))).slice(0, 40);
+      if (!teams.length) {
+        box.hidden = !query;
+        box.innerHTML = query ? "<li>No matches</li>" : "";
+        return;
+      }
+      box.hidden = false;
+      box.innerHTML = teams.map((tm) => {
+        return '<li tabindex="0" data-sport="' + sport + '" data-add-fav="' + escapeHtml(String(tm.id)) + '">' +
+          (tm.logo ? '<img src="' + escapeHtml(tm.logo) + '" alt="">' : "") +
+          escapeHtml((tm.abbrev ? tm.abbrev + " · " : "") + tm.name) + "</li>";
+      }).join("");
+      box.querySelectorAll("[data-add-fav]").forEach((li) => {
+        const add = () => addFavorite(sport, li.getAttribute("data-add-fav"));
+        li.addEventListener("click", add);
+        li.addEventListener("keydown", (e) => { if (e.key === "Enter") add(); });
+      });
+    }
+
+    function addFavorite(sport, teamId) {
+      const tm = ((state.catalog[sport] && state.catalog[sport].teams) || []).find((x) => String(x.id) === String(teamId));
+      if (!tm) return;
+      const favs = state.sports[sport].favorites;
+      if (favs.some((f) => String(f.id) === String(tm.id))) return;
+      favs.push({ id: String(tm.id), name: tm.name, abbrev: tm.abbrev, logo: tm.logo || "" });
+      const hold = settingsBody.querySelector('[data-fav-selected="' + sport + '"]');
+      if (hold) {
+        hold.insertAdjacentHTML("beforeend", favChipHtml(sport, favs[favs.length - 1]));
+        hold.querySelector("[data-unfav=\"" + CSS.escape(String(tm.id)) + "\"]")?.addEventListener("click", (e) => {
+          removeFavorite(sport, e.currentTarget.getAttribute("data-unfav"));
+        });
+      }
+      const inp = settingsBody.querySelector('[data-fav-search="' + sport + '"]');
+      if (inp) inp.value = "";
+      const box = settingsBody.querySelector('[data-fav-results="' + sport + '"]');
+      if (box) box.hidden = true;
+      persistAndRefresh();
+    }
+
+    function removeFavorite(sport, teamId) {
+      state.sports[sport].favorites = (state.sports[sport].favorites || []).filter((f) => String(f.id) !== String(teamId));
+      const chip = settingsBody.querySelector('[data-fav-selected="' + sport + '"] [data-fav-id="' + CSS.escape(String(teamId)) + '"]');
+      if (chip) chip.remove();
+      persistAndRefresh();
+    }
+
+    let persistTimer = null;
+    function persistAndRefresh() {
+      savePrefs();
+      updateBrand();
+      renderSportTabs();
+      document.body.classList.toggle("week-hidden", !enabledSportIds().includes("cfb"));
+      if (persistTimer) clearTimeout(persistTimer);
+      persistTimer = setTimeout(() => {
+        state.currentGameId = null;
+        state.skipAlerts = true;
+        state.scoreSnap = null;
+        load(false);
+      }, 350);
+    }
+
+    async function openSettings() {
+      settingsOverlay.hidden = false;
+      document.body.classList.add("settings-open");
+      renderSettings();
+      settingsClose.focus();
+      const needed = SPORT_ORDER.filter((id) => {
+        const cfg = SPORTS[id];
+        const cat = state.catalog[id] || {};
+        return (cfg.hasTop25 && !(cat.conferences && cat.conferences.length)) || (cfg.hasDivisions && !(cat.teams && cat.teams.length));
+      });
+      if (needed.length) {
+        await Promise.all(needed.map((id) => ensureCatalog(id)));
+        if (settingsOpen()) renderSettings();
+      }
+    }
+    function closeSettings() {
+      settingsOverlay.hidden = true;
+      document.body.classList.remove("settings-open");
+      if (settingsBtn) settingsBtn.focus();
+    }
+
+    settingsBtn.addEventListener("click", () => { if (settingsOpen()) closeSettings(); else openSettings(); });
+    settingsClose.addEventListener("click", closeSettings);
+    settingsOverlay.addEventListener("click", (e) => { if (e.target === settingsOverlay) closeSettings(); });
+
+    loadCatalogCache();
+    renderSportTabs();
+    updateBrand();
+    document.body.classList.toggle("week-hidden", !enabledSportIds().includes("cfb"));
+    enabledSportIds().forEach((id) => { ensureCatalog(id); });
 
     applyViewMode();
     setPaused(false);
