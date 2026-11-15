@@ -3160,7 +3160,8 @@
       return [parseLedRuns(cv)];
     }
 
-    function paintLedTextCanvas(cv) {
+    function paintLedTextCanvas(cv, opts) {
+      opts = opts || {};
       const dpr = ledDpr();
       let lines = parseLedLines(cv);
       let nLines = Math.max(1, lines.length);
@@ -3197,19 +3198,70 @@
         const textWdev = Math.max(...lines.map((runs) => measureLedRuns(runs, pitch)));
         cssW = Math.max(Math.ceil(textWdev / dpr), 8);
       }
+      if (opts.pitch) pitch = Math.max(2, opts.pitch);
       const { w, h } = sizeLedCanvas(cv, cssW, cssH, dpr, !fill);
       const ctx = cv.getContext("2d");
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, w, h);
       const usedH = rowSpan * pitch;
       let y = Math.floor((h - usedH) / 2);
-      const maxW = Math.max(...lines.map((runs) => measureLedRuns(runs, pitch)));
+      const align = opts.align || cv.dataset.ledAlign || (cv.classList.contains("led-size-score") ? "right" : (fill ? "center" : "left"));
       for (const runs of lines) {
         const lineW = measureLedRuns(runs, pitch);
-        const x = fill ? Math.floor((w - lineW) / 2) : 0;
-        drawLedRuns(ctx, runs, Math.max(0, x), y, pitch);
+        let x = 0;
+        if (align === "right") x = Math.max(0, w - lineW);
+        else if (align === "center") x = Math.max(0, Math.floor((w - lineW) / 2));
+        drawLedRuns(ctx, runs, x, y, pitch);
         y += (LED_ROWS + 1) * pitch;
       }
+    }
+
+    function isLedVisible(cv) {
+      if (!cv || cv.closest("[hidden]")) return false;
+      const cw = cv.clientWidth, ch = cv.clientHeight;
+      if (cw < 4 || ch < 4) return false;
+      let el = cv;
+      while (el) {
+        const s = getComputedStyle(el);
+        if (s.display === "none" || s.visibility === "hidden") return false;
+        el = el.parentElement;
+        if (el && (el.id === "board" || el === document.body)) break;
+      }
+      return true;
+    }
+
+    function sharedLedPitch(canvases, minChars) {
+      const dpr = ledDpr();
+      let maxChars = Math.max(1, minChars || 1);
+      canvases.forEach((cv) => {
+        const lines = parseLedLines(cv);
+        lines.forEach((runs) => {
+          const n = runs.reduce((sum, run) => sum + ledTextLen(run.t), 0);
+          if (n > maxChars) maxChars = n;
+        });
+      });
+      const cols = Math.max(1, maxChars * LED_ADV - 1);
+      let pitch = Infinity;
+      canvases.forEach((cv) => {
+        const parent = cv.parentElement;
+        const cssW = cv.clientWidth || (parent && parent.clientWidth) || 0;
+        const cssH = cv.clientHeight || (parent && parent.clientHeight) || ledCssHeight(cv, 24);
+        const p = Math.min(
+          Math.floor(Math.max(1, Math.round(cssW * dpr)) / cols),
+          Math.floor(Math.max(1, Math.round(cssH * dpr)) / LED_ROWS)
+        );
+        if (p < pitch) pitch = p;
+      });
+      return { pitch: Math.max(2, pitch), cols: cols, maxChars: maxChars };
+    }
+
+    function paintSharedLedGroup(canvases, minChars, defaultAlign) {
+      if (!canvases.length) return;
+      const { pitch } = sharedLedPitch(canvases, minChars);
+      canvases.forEach((cv) => {
+        const align = cv.dataset.ledAlign || defaultAlign;
+        try { paintLedTextCanvas(cv, { pitch: pitch, align: align }); } catch (e) {}
+      });
     }
 
     const logoCache = new Map();
@@ -3321,7 +3373,23 @@
 
     function paintLedTree(root) {
       const scope = root || document;
+      const grouped = new Set();
+      const spots = scope.matches && scope.matches(".spot") ? [scope] : [...scope.querySelectorAll(".spot")];
+      spots.forEach((spot) => {
+        const scores = [...spot.querySelectorAll("canvas.led-size-score")].filter((cv) => {
+          return isLedVisible(cv) && !cv.classList.contains("spot-dash-cv") && !cv.closest(".spot-dash-slot");
+        });
+        paintSharedLedGroup(scores, 2, "right");
+        scores.forEach((cv) => grouped.add(cv));
+        const names = [...spot.querySelectorAll("canvas.led-size-label")].filter(isLedVisible);
+        paintSharedLedGroup(names, 1, "center");
+        names.forEach((cv) => grouped.add(cv));
+        const ranks = [...spot.querySelectorAll("canvas.led-size-rank")].filter(isLedVisible);
+        paintSharedLedGroup(ranks, 3, "left");
+        ranks.forEach((cv) => grouped.add(cv));
+      });
       scope.querySelectorAll("canvas.led-text-cv").forEach((cv) => {
+        if (grouped.has(cv)) return;
         try { paintLedTextCanvas(cv); } catch (e) {}
       });
       const logos = [...scope.querySelectorAll("canvas.led-logo-cv")];
@@ -3517,7 +3585,7 @@
           '<div class="spot-team-score-row">' +
             (logo ? ledCanvas("led-logo-cv", {"data-src": logo, "data-grid": "24", "aria-label": name}, "led-logo-cv") : "") +
             '<div class="led-score-slot">' +
-              ledCanvas("led-text-cv", {"data-text": score, "data-color": scoreColor}, "led-text-cv led-size-score led-score-inline led-fill") +
+              ledCanvas("led-text-cv", {"data-text": score, "data-color": scoreColor, "data-led-align": "right"}, "led-text-cv led-size-score led-score-inline led-fill") +
             "</div>" +
             footballSvg("poss") +
           "</div>" +
@@ -3580,13 +3648,13 @@
             spotTeamHtml(away, possessionId, isFinal, isPre) +
             '<div class="spot-scores" aria-hidden="true">' +
               '<div class="led-score-slot">' +
-                ledCanvas("led-text-cv", {"data-text": awayScore, "data-color": awayColor}, "led-text-cv led-size-score led-fill") +
+                ledCanvas("led-text-cv", {"data-text": awayScore, "data-color": awayColor, "data-led-align": "right"}, "led-text-cv led-size-score led-fill") +
               "</div>" +
               '<div class="led-score-slot spot-dash-slot">' +
-                ledCanvas("led-text-cv", {"data-text": "-", "data-color": "#444444"}, "led-text-cv led-size-score led-fill") +
+                ledCanvas("led-text-cv", {"data-text": "-", "data-color": "#444444", "data-led-align": "center"}, "led-text-cv led-size-score led-fill") +
               "</div>" +
               '<div class="led-score-slot">' +
-                ledCanvas("led-text-cv", {"data-text": homeScore, "data-color": homeColor}, "led-text-cv led-size-score led-fill") +
+                ledCanvas("led-text-cv", {"data-text": homeScore, "data-color": homeColor, "data-led-align": "left"}, "led-text-cv led-size-score led-fill") +
               "</div>" +
             "</div>" +
             spotTeamHtml(home, possessionId, isFinal, isPre) +
