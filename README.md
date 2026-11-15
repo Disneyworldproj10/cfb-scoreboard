@@ -2,7 +2,7 @@
 
 A standalone college football scoreboard for **ACC** and **AP Top 25** games, built as a single-page app (no build step). It talks directly to the ESPN college football scoreboard API.
 
-Designed first for a **1920×720 (8:3)** display: the rotating spotlight fills the viewport with no scrolling (away team left, scores center, home team right). It also scales to other sizes, including phones (portrait stack, landscape 3-column) and can be installed as a PWA.
+Styled as a **Glance-style LED matrix** on a **1920×720 (8:3)** panel: black unlit-dot cabinet, pixel typography, team-colored abbreviations, a scrolling bottom ticker, and a flashing TOUCHDOWN / FIELD GOAL marquee. The rotating spotlight fills the viewport with no scrolling (away team left, scores center, home team right). Controls auto-hide so the display reads like a real sign. It also scales to other sizes, including phones (portrait stack, landscape 3-column) and can be installed as a PWA.
 
 ## Open locally
 

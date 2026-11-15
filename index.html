@@ -17,7 +17,7 @@
   <link rel="icon" type="image/png" href="icon-512.png" sizes="512x512" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&family=VT323&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg: #090b10;
@@ -1047,10 +1047,430 @@
       .spot-team .poss { display: block; }
       .spot { padding: 4px 10px 4px; gap: 2px; }
     }
+    /* ========== GLANCE-STYLE LED MATRIX ========== */
+    :root {
+      --led-pitch: 10px;
+      --led-dot: 3.2px;
+      --led-unlit: #171717;
+      --led-amber: #ffb000;
+      --led-red: #ff2a2a;
+      --led-green: #00ff55;
+      --led-white: #f3f3f3;
+      --led-cyan: #3ecbff;
+    }
+    body.led {
+      background: #050505;
+      color: var(--led-white);
+      font-family: "VT323", "Silkscreen", monospace;
+    }
+    body.led.view-rotate,
+    body.led.view-grid {
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+    body.led .wrap,
+    body.led.view-rotate .wrap,
+    body.led.view-grid .wrap {
+      max-width: 1920px;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      margin: 0 auto;
+      padding: 10px;
+      background: #0a0a0a;
+      box-shadow: inset 0 0 0 8px #1a1a1a, inset 0 0 0 10px #2a2a2a, inset 0 0 24px #000;
+      box-sizing: border-box;
+    }
+    body.led footer.note { display: none !important; }
+    body.led .brand p { display: none; }
+    body.led .brand h1,
+    body.led .tabs button,
+    body.led .view-toggle button,
+    body.led #refresh-btn,
+    body.led #week-select,
+    body.led .updated,
+    body.led #rot-pos,
+    body.led .dwell {
+      font-family: "VT323", monospace;
+    }
+
+    /* Unlit LED matrix + scanlines, over the whole cabinet face */
+    .led-grid {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 8;
+      /* Coarse LED punch: most of each cell stays lit so type stays readable,
+         with a faint unlit bead in empty areas of the black panel. */
+      background-image:
+        radial-gradient(circle at center, transparent 3.15px, #000 3.55px),
+        radial-gradient(circle at center, #202020 1.15px, transparent 1.4px),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0) 0 9px,
+          rgba(0,0,0,0.12) 9px 10px
+        );
+      background-size: var(--led-pitch) var(--led-pitch), var(--led-pitch) var(--led-pitch), 100% 10px;
+      background-position: 0 0, 0 0, 0 0;
+    }
+    .spotlight-shell,
+    #grid-view {
+      position: relative;
+    }
+    body.led .score-alert {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+    }
+    body.led .spotlight-shell {
+      flex: 1;
+      min-height: 0;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      background: #000;
+      overflow: hidden;
+    }
+    body.led .spotlight-stage,
+    body.led .led-ticker,
+    body.led .alert-inner,
+    body.led .led-abbr,
+    body.led .spot-score,
+    body.led .spot-clock,
+    body.led .badge,
+    body.led .alert-label {
+      text-shadow:
+        0 0 4px currentColor,
+        0 0 10px currentColor,
+        0 0 22px currentColor;
+    }
+
+    body.led .spot {
+      padding: clamp(6px, 1.5vh, 16px) clamp(12px, 3vw, 36px) clamp(4px, 1vh, 12px);
+      gap: clamp(4px, 1vh, 10px);
+    }
+    body.led .spot-top { min-height: 24px; }
+    body.led .badge {
+      font-family: "Press Start 2P", "Silkscreen", monospace;
+      font-size: clamp(0.55rem, 1.8vh, 0.85rem);
+      border-radius: 0;
+      background: transparent;
+      border: 0;
+      padding: 2px 4px;
+      letter-spacing: 0.08em;
+    }
+    body.led .badge.live {
+      color: var(--led-red);
+      background: transparent;
+      animation: ledLiveBlink 1s steps(1, end) infinite;
+    }
+    @keyframes ledLiveBlink {
+      0%, 60% { opacity: 1; }
+      61%, 100% { opacity: 0.35; }
+    }
+    body.led .badge.final { color: var(--led-green); background: transparent; }
+    body.led .badge.upcoming { color: var(--led-cyan); background: transparent; }
+    body.led .spot-clock {
+      font-family: "Press Start 2P", "Silkscreen", monospace;
+      font-size: clamp(0.8rem, 3vh, 1.35rem);
+      color: var(--led-white);
+      letter-spacing: 0.06em;
+    }
+    body.led .spot.live .spot-clock {
+      color: var(--led-white);
+      animation: ledLiveBlink 1.2s steps(1, end) infinite;
+    }
+    body.led .spot-situation,
+    body.led .network,
+    body.led .spot-tags {
+      font-family: "VT323", monospace;
+      font-size: clamp(1.15rem, 3.6vh, 1.75rem);
+      color: var(--led-amber);
+      background: none;
+      border: 0;
+      padding: 0;
+    }
+    body.led .network { color: var(--led-cyan); letter-spacing: 0.12em; }
+
+
+    body.led .spot-team img.led-logo,
+    body.led #alert-logo {
+      -webkit-mask-image: radial-gradient(circle at center, #000 55%, transparent 62%);
+      -webkit-mask-size: 6px 6px;
+      -webkit-mask-repeat: repeat;
+      mask-image: radial-gradient(circle at center, #000 55%, transparent 62%);
+      mask-size: 6px 6px;
+      mask-repeat: repeat;
+    }
+    body.led .spot-team img,
+    body.led .alert-logo {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      filter: contrast(1.25) saturate(1.35) brightness(1.05);
+      width: clamp(64px, 22vh, 180px);
+      height: clamp(64px, 22vh, 180px);
+    }
+    body.led .led-abbr {
+      font-family: "Press Start 2P", "Silkscreen", monospace;
+      font-size: clamp(1.35rem, 6.6vh, 3.6rem);
+      line-height: 1.15;
+      color: var(--led, var(--led-amber));
+      letter-spacing: 0.08em;
+      filter: brightness(1.15);
+    }
+    body.led .spot-name {
+      font-family: "VT323", monospace;
+      font-size: clamp(0.9rem, 2.4vh, 1.3rem);
+      color: #9a9a9a;
+      text-shadow: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    body.led .spot-name .rank {
+      background: transparent;
+      color: var(--led-amber);
+      font-family: "Press Start 2P", monospace;
+      font-size: 0.7em;
+      border-radius: 0;
+      min-width: 0;
+      height: auto;
+    }
+    body.led .spot-meta { display: none; }
+    body.led .spot-team .poss { display: none !important; }
+    body.led .spot-team.has-ball .led-abbr::after {
+      content: " ◂";
+      color: var(--led-amber);
+      animation: ledBlink 0.7s steps(1, end) infinite;
+      font-size: 0.7em;
+    }
+    body.led .spot-score {
+      font-family: "Press Start 2P", "Silkscreen", monospace;
+      font-size: clamp(2.8rem, 18vh, 7.6rem);
+      color: var(--led-white);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      filter: brightness(1.2);
+    }
+    body.led .spot-score.blank { color: #333; text-shadow: none; }
+    body.led .spot-score.loser { color: #888; text-shadow: 0 0 6px #666; }
+    body.led .spot-score.winner { color: var(--led-white); }
+    body.led .spot-dash { color: #444; font-family: "Press Start 2P", monospace; text-shadow: none; }
+    body.led .spot-score-inline {
+      font-family: "Press Start 2P", monospace;
+      color: var(--led-white);
+    }
+
+    @keyframes ledBlink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0.12; }
+    }
+
+    /* Bottom LED ticker */
+    .led-ticker {
+      flex-shrink: 0;
+      height: clamp(52px, 11vh, 84px);
+      overflow: hidden;
+      background: #000;
+      display: flex;
+      align-items: center;
+      border-top: 2px solid #111;
+      position: relative;
+      z-index: 2;
+    }
+    .led-ticker-track {
+      display: flex;
+      width: max-content;
+      animation: ledTicker var(--ticker-dur, 45s) linear infinite;
+    }
+    .led-ticker-copy {
+      padding-right: 5rem;
+      white-space: nowrap;
+      font-family: "Press Start 2P", "Silkscreen", monospace;
+      font-size: clamp(12px, 3.1vh, 22px);
+      line-height: 1.2;
+      color: var(--led-amber);
+      letter-spacing: 0.04em;
+    }
+    .led-ticker-copy .tk-live { color: var(--led-red); }
+    .led-ticker-copy .tk-final { color: var(--led-green); }
+    .led-ticker-copy .tk-up { color: var(--led-cyan); }
+    @keyframes ledTicker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    /* Minimal auto-hiding controls */
+    body.led .topbar,
+    body.led .rotate-bar,
+    body.led .rot-progress {
+      position: absolute;
+      z-index: 30;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    body.led .topbar {
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(0,0,0,0.82);
+      border: 1px solid #222;
+      padding: 6px 8px;
+    }
+    body.led .rotate-bar {
+      left: 12px;
+      right: 12px;
+      bottom: calc(clamp(52px, 11vh, 84px) + 14px);
+      background: rgba(0,0,0,0.82);
+      border: 1px solid #222;
+      padding: 6px 10px;
+      justify-content: flex-start;
+    }
+    body.led .rot-progress {
+      left: 12px;
+      right: 12px;
+      bottom: calc(clamp(52px, 11vh, 84px) + 4px);
+      margin-top: 0;
+    }
+    body.led.controls-on .topbar,
+    body.led.controls-on .rotate-bar,
+    body.led.controls-on .rot-progress {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    body.led #rotate-view { position: relative; }
+
+    /* Grid as LED tiles */
+    body.led #grid-view .card {
+      background: #000;
+      border: 1px solid #1a1a1a;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    body.led #grid-view .card .name,
+    body.led #grid-view .card .score,
+    body.led #grid-view .badge {
+      font-family: "Press Start 2P", "VT323", monospace;
+    }
+    body.led #grid-view .card img { image-rendering: pixelated; }
+
+    /* TOUCHDOWN / FG LED marquee */
+    body.led .score-alert {
+      background: #000;
+    }
+    body.led #alert-confetti { display: none !important; }
+    body.led .alert-burst,
+    body.led .alert-rings { display: none !important; }
+    body.led .alert-flash {
+      background: currentColor;
+      color: var(--led-green);
+      mix-blend-mode: screen;
+      animation: ledWash 0.45s steps(2, end) 6;
+    }
+    body.led .score-alert[data-kind="FIELD GOAL"] .alert-flash { color: var(--led-amber); }
+    body.led .score-alert[data-kind="SAFETY"] .alert-flash { color: var(--led-red); }
+    body.led .score-alert[data-kind="EXTRA POINT"] .alert-flash,
+    body.led .score-alert[data-kind="2-PT CONVERSION"] .alert-flash { color: var(--led-cyan); }
+    @keyframes ledWash {
+      0%, 40% { opacity: 0.35; }
+      50%, 100% { opacity: 0; }
+    }
+    .led-chase {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 10px;
+      z-index: 9;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--led-green) 0 10px,
+        #001a08 10px 20px
+      );
+      background-size: 40px 10px;
+      animation: ledChase 0.28s linear infinite;
+      pointer-events: none;
+    }
+    .led-chase-top { top: 0; }
+    .led-chase-bot { bottom: 0; }
+    body.led .score-alert[data-kind="FIELD GOAL"] .led-chase {
+      background: repeating-linear-gradient(90deg, var(--led-amber) 0 10px, #1a1000 10px 20px);
+      background-size: 40px 10px;
+    }
+    body.led .score-alert[data-kind="SAFETY"] .led-chase {
+      background: repeating-linear-gradient(90deg, var(--led-red) 0 10px, #1a0000 10px 20px);
+      background-size: 40px 10px;
+    }
+    @keyframes ledChase {
+      from { background-position: 0 0; }
+      to { background-position: 40px 0; }
+    }
+    body.led .alert-inner {
+      z-index: 10;
+    }
+    body.led .alert-label {
+      font-family: "Press Start 2P", "Silkscreen", monospace;
+      color: var(--led-green);
+      font-size: clamp(1.8rem, 10vh, 5.6rem);
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 8px var(--led-green), 0 0 24px var(--led-green), 0 0 48px var(--led-green);
+      animation: ledTdFlash 0.45s steps(1, end) infinite, ledMarqueeIn 0.55s steps(8, end);
+      margin: 0;
+      line-height: 1.15;
+    }
+    @keyframes ledTdFlash {
+      0%, 55% { opacity: 1; filter: brightness(1.25); }
+      56%, 100% { opacity: 0.55; filter: brightness(0.85); }
+    }
+    body.led .score-alert[data-kind="FIELD GOAL"] .alert-label {
+      color: var(--led-amber);
+      text-shadow: 0 0 8px var(--led-amber), 0 0 24px var(--led-amber);
+    }
+    body.led .score-alert[data-kind="SAFETY"] .alert-label {
+      color: var(--led-red);
+      text-shadow: 0 0 8px var(--led-red), 0 0 24px var(--led-red);
+    }
+    body.led .score-alert[data-kind="SCORE!"] .alert-label,
+    body.led .score-alert[data-kind="EXTRA POINT"] .alert-label,
+    body.led .score-alert[data-kind="2-PT CONVERSION"] .alert-label {
+      color: var(--led-white);
+      text-shadow: 0 0 8px #fff, 0 0 24px #fff;
+    }
+    @keyframes ledMarqueeIn {
+      from { transform: translateX(40%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    body.led .alert-team {
+      font-family: "Press Start 2P", "Silkscreen", monospace;
+      color: var(--alert-a, var(--led-white));
+      letter-spacing: 0.16em;
+      text-shadow: 0 0 8px currentColor, 0 0 18px currentColor;
+      margin-top: 12px;
+      font-size: clamp(0.9rem, 4vh, 1.8rem);
+    }
+    body.led .score-alert.is-out .alert-inner {
+      animation: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    @media (max-width: 800px) {
+      body.led .led-abbr { font-size: 1.1rem; }
+      body.led .spot-score { font-size: 2.2rem; }
+      body.led .led-ticker { height: 44px; }
+    }
+
+    body.led .wrap { position: relative; display: flex; flex-direction: column; }
+    body.led .wrap > .cabinet-grid { z-index: 8; border-radius: 0; }
+    body.led #board { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    body.led.view-grid #grid-view { flex: 1; min-height: 0; overflow: auto; position: relative; z-index: 1; }
+    body.led .led-ticker { z-index: 2; }
+
   </style>
 </head>
-<body class="view-rotate">
+<body class="view-rotate led">
   <div class="wrap">
+    <div class="led-grid cabinet-grid" aria-hidden="true"></div>
     <div class="topbar">
     <header class="app">
       <div class="brand">
@@ -1110,7 +1530,8 @@
     <main id="board" aria-busy="true">
       <section id="rotate-view" aria-label="Rotating game spotlight">
         <div class="spotlight-shell">
-          <div class="spotlight-stage" id="spotlight-stage">
+          <div class="led-grid" aria-hidden="true"></div>
+          <div class="spotlight-stage led-pixels" id="spotlight-stage">
             <div class="skel-spot" aria-hidden="true"></div>
           </div>
         </div>
@@ -1137,6 +1558,9 @@
       </section>
       <section id="grid-view" hidden></section>
     </main>
+    <div class="led-ticker" aria-label="Other scores ticker">
+      <div class="led-ticker-track" id="ticker-track"></div>
+    </div>
 
     <footer class="note">
       Scores from the ESPN college football API. Kickoff times shown in Eastern (America/New_York).
@@ -1146,9 +1570,12 @@
 
   <div id="score-alert" class="score-alert" hidden role="dialog" aria-live="assertive" aria-label="Score alert">
     <canvas id="alert-confetti"></canvas>
+    <div class="led-chase led-chase-top" aria-hidden="true"></div>
+    <div class="led-chase led-chase-bot" aria-hidden="true"></div>
     <div class="alert-flash" aria-hidden="true"></div>
     <div class="alert-burst" aria-hidden="true"></div>
     <div class="alert-rings" aria-hidden="true"></div>
+    <div class="led-grid alert-grid" aria-hidden="true"></div>
     <div class="alert-inner">
       <img id="alert-logo" alt="" />
       <div class="alert-copy">
@@ -1476,6 +1903,31 @@
       return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.62;
     }
 
+
+    function liftLedHex(hex) {
+      const s = String(hex || "").replace("#", "");
+      if (s.length !== 6) return hex;
+      let r = parseInt(s.slice(0, 2), 16);
+      let g = parseInt(s.slice(2, 4), 16);
+      let b = parseInt(s.slice(4, 6), 16);
+      const max = Math.max(r, g, b, 1);
+      if (max < 210) {
+        const scale = 210 / max;
+        r = Math.min(255, Math.round(r * scale));
+        g = Math.min(255, Math.round(g * scale));
+        b = Math.min(255, Math.round(b * scale));
+      }
+      return "#" + [r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("");
+    }
+
+    function ledTeamColor(team, fallback) {
+      const primary = hexColor(team && team.color, fallback || "#ffb000");
+      const alt = hexColor(team && team.alternateColor, primary);
+      if (!isDarkHex(primary)) return liftLedHex(primary);
+      if (alt && !isDarkHex(alt)) return liftLedHex(alt);
+      return liftLedHex(primary);
+    }
+
     function classifyScoreChange(delta, playText, gameIdStr, teamId) {
       const text = String(playText || "").toLowerCase();
       const isTdPlay = /touchdown|(^|[^a-z])td([^a-z]|$)/.test(text) && !/no touchdown/.test(text);
@@ -1686,7 +2138,7 @@
       alertEl.style.setProperty("--alert-a", accent);
       alertEl.dataset.kind = item.label || item.kind || "SCORE!";
       alertLabel.textContent = item.label || item.kind || "SCORE!";
-      alertTeam.textContent = team.shortDisplayName || team.location || team.displayName || team.abbreviation || "";
+      alertTeam.textContent = (team.abbreviation || team.shortDisplayName || team.location || team.displayName || "").toUpperCase();
       const logo = team.logoDark || team.logo || "";
       if (logo) {
         alertLogo.src = logo;
@@ -1698,7 +2150,7 @@
       // Restart CSS animations
       alertEl.hidden = false;
       alertEl.classList.remove("is-out");
-      alertEl.querySelectorAll(".alert-flash, .alert-burst, .alert-rings, .alert-inner, .alert-logo, .alert-label").forEach((el) => {
+      alertEl.querySelectorAll(".alert-flash, .alert-burst, .alert-rings, .alert-inner, .alert-logo, .alert-label, .led-chase").forEach((el) => {
         el.style.animation = "none";
         void el.offsetWidth;
         el.style.animation = "";
@@ -1990,13 +2442,16 @@
       if (hasBall) classes.push("has-ball");
       if (winner) classes.push("winner");
       if (loser) classes.push("loser");
+      const led = ledTeamColor(team, "#ffb000");
+      const letters = (abbrev || name).toUpperCase();
       return (
-        '<div class="' + classes.join(" ") + '">' +
-          (logo ? '<img src="' + escapeHtml(logo) + '" alt="' + escapeHtml(name) + '" />' : "") +
-          '<div class="spot-name">' +
-            (ranked ? '<span class="rank">' + rank + "</span>" : "") +
-            escapeHtml(name) +
+        '<div class="' + classes.join(" ") + '" style="--led:' + led + '">' +
+          (logo ? '<img class="led-logo" src="' + escapeHtml(logo) + '" alt="' + escapeHtml(name) + '" />' : "") +
+          '<div class="led-abbr">' +
+            (ranked ? '<span class="rank">' + rank + "</span> " : "") +
+            escapeHtml(letters) +
           "</div>" +
+          '<div class="spot-name">' + escapeHtml(name) + "</div>" +
           '<div class="spot-meta">' + escapeHtml([abbrev, record].filter(Boolean).join(" · ")) + "</div>" +
           footballSvg("poss") +
           '<div class="spot-score-inline' + (isPre ? " blank" : "") + '">' + escapeHtml(score) + "</div>" +
@@ -2265,8 +2720,62 @@
       state.refreshTimer = setInterval(() => load(false), REFRESH_MS);
     }
 
+
+    function tickerItemHtml(event) {
+      const teams = orderedCompetitors(event);
+      const away = teams[0] || {};
+      const home = teams[1] || teams[0] || {};
+      const bucket = statusBucket(event);
+      const isPre = bucket === "upcoming";
+      const scoreOf = (c) => {
+        const raw = c.score;
+        return isPre || raw === "" || raw == null ? "--" : String(raw);
+      };
+      const teamBit = (c) => {
+        const team = c.team || {};
+        const color = ledTeamColor(team, "#ffb000");
+        const abbr = escapeHtml((team.abbreviation || team.shortDisplayName || "?").toUpperCase());
+        return '<span class="tk-team" style="color:' + color + '">' + abbr + "</span>";
+      };
+      const cls = bucket === "live" ? "tk-live" : bucket === "final" ? "tk-final" : "tk-up";
+      let status = "";
+      if (bucket === "live") status = "LIVE " + escapeHtml(statusLabel(event) || "");
+      else if (bucket === "final") status = "FINAL";
+      else status = escapeHtml(statusLabel(event) || "");
+      return (
+        teamBit(away) + " " + escapeHtml(scoreOf(away)) + "  " +
+        teamBit(home) + " " + escapeHtml(scoreOf(home)) +
+        '  <span class="' + cls + '">' + status + "</span>"
+      );
+    }
+
+    function updateTicker() {
+      const track = document.getElementById("ticker-track");
+      if (!track) return;
+      const games = (typeof filteredGames === "function") ? filteredGames() : [];
+      const bits = games.map(tickerItemHtml);
+      const line = bits.length ? bits.join(" &nbsp;&nbsp;·&nbsp;&nbsp; ") : "NO GAMES";
+      if (track.dataset.sig === line) return;
+      track.dataset.sig = line;
+      const html = '<span class="led-ticker-copy">' + line + "</span>";
+      track.innerHTML = html + html;
+      const dur = Math.max(28, Math.round((games.length || 1) * 6.5));
+      track.style.setProperty("--ticker-dur", dur + "s");
+    }
+
+    let controlsTimer = null;
+    function showControls(ms) {
+      document.body.classList.add("controls-on");
+      if (controlsTimer) clearTimeout(controlsTimer);
+      controlsTimer = setTimeout(() => {
+        document.body.classList.remove("controls-on");
+        controlsTimer = null;
+      }, ms == null ? 4000 : ms);
+    }
+
     function render() {
       updateCounts();
+      updateTicker();
       if (state.error && !state.events.length) {
         stopRotate();
         const errHtml =
@@ -2454,6 +2963,12 @@
       applyAlertToggles();
       if (state.soundOn) getAudioCtx();
     });
+
+    document.addEventListener("mousemove", () => showControls());
+    document.addEventListener("pointerdown", () => showControls(), { passive: true });
+    document.addEventListener("touchstart", () => showControls(), { passive: true });
+    document.addEventListener("keydown", () => showControls());
+    showControls(5000);
 
     applyViewMode();
     setPaused(false);
