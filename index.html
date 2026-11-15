@@ -667,12 +667,15 @@
       font-weight: 600;
       margin-left: auto;
     }
-    #dwell-range {
+    #dwell-range,
+    #ticker-range {
       width: 120px;
       accent-color: var(--gold);
       cursor: pointer;
     }
-    #dwell-label { color: var(--text); min-width: 2.2em; }
+    #dwell-label,
+    #ticker-label { color: var(--text); min-width: 2.2em; }
+    .dwell + .dwell { margin-left: 0; }
     .rot-progress {
       height: 3px;
       margin-top: 6px;
@@ -991,7 +994,7 @@
         line-height: 1;
       }
       .dwell { margin-left: 0; width: 100%; }
-      #dwell-range { flex: 1; }
+      #dwell-range, #ticker-range { flex: 1; }
     }
 
     @media (min-width: 801px) {
@@ -2128,6 +2131,10 @@
             <input type="range" id="dwell-range" min="4" max="20" step="1" value="8" />
             <span id="dwell-label">8s</span>
           </label>
+          <label class="dwell" for="ticker-range">Ticker
+            <input type="range" id="ticker-range" min="1" max="3" step="0.5" value="2" aria-label="Ticker scroll speed" />
+            <span id="ticker-label">2x</span>
+          </label>
         </div>
         <div class="rot-progress" aria-hidden="true"><div id="rot-progress-bar"></div></div>
       </section>
@@ -2172,6 +2179,8 @@
     const TZ = "America/New_York";
     const REFRESH_MS = 10000;
     const DEFAULT_DWELL_MS = 8000;
+    const TICKER_BASE_PPS = 10; /* old default: 10 LED pitches / second */
+    const DEFAULT_TICKER_X = 2; /* new default: double the old speed */
     const PREFS_KEY = "cfb-scoreboard-prefs";
     const ALERT_MS = 5500;
     const TD_PAT_WINDOW_MS = 90000;
@@ -2194,6 +2203,8 @@
     const iconPlay = document.getElementById("icon-play");
     const dwellRange = document.getElementById("dwell-range");
     const dwellLabel = document.getElementById("dwell-label");
+    const tickerRange = document.getElementById("ticker-range");
+    const tickerLabel = document.getElementById("ticker-label");
     const progressBar = document.getElementById("rot-progress-bar");
     const alertEl = document.getElementById("score-alert");
     const alertLogo = document.getElementById("alert-logo");
@@ -2224,6 +2235,7 @@
       currentGameId: null,
       paused: false,
       dwellMs: clampDwell(savedPrefs.dwellMs ?? DEFAULT_DWELL_MS),
+      tickerX: clampTickerX(savedPrefs.tickerX ?? DEFAULT_TICKER_X),
       alertsOn: savedPrefs.alertsOn !== false,
       soundOn: savedPrefs.soundOn === true,
       skipAlerts: true,
@@ -2248,6 +2260,7 @@
         localStorage.setItem(PREFS_KEY, JSON.stringify({
           view: state.view,
           dwellMs: state.dwellMs,
+          tickerX: state.tickerX,
           alertsOn: state.alertsOn,
           soundOn: state.soundOn,
         }));
@@ -2256,6 +2269,13 @@
     function clampDwell(ms) {
       const s = Math.round(Number(ms) / 1000);
       return Math.min(20, Math.max(4, Number.isFinite(s) ? s : 8)) * 1000;
+    }
+    function clampTickerX(x) {
+      const n = Math.round((Number(x) || DEFAULT_TICKER_X) * 2) / 2;
+      return Math.min(3, Math.max(1, Number.isFinite(n) ? n : DEFAULT_TICKER_X));
+    }
+    function tickerPps() {
+      return TICKER_BASE_PPS * (state.tickerX || DEFAULT_TICKER_X);
     }
 
     function isRanked(competitor) {
@@ -3373,7 +3393,7 @@
       if (!tickerAnim.last) tickerAnim.last = ts;
       const dt = Math.min(50, ts - tickerAnim.last);
       tickerAnim.last = ts;
-      tickerAnim.offset += pitch * 10 * (dt / 1000);
+      tickerAnim.offset += pitch * tickerPps() * (dt / 1000);
       if (tickerAnim.offset > total) tickerAnim.offset = tickerAnim.offset % total;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.fillStyle = "#000000";
@@ -3951,6 +3971,19 @@
       savePrefs();
       document.documentElement.style.setProperty("--dwell", state.dwellMs / 1000 + "s");
       if (state.view === "rotate" && !state.paused) scheduleRotate();
+    });
+
+    function syncTickerControl() {
+      const x = clampTickerX(state.tickerX);
+      state.tickerX = x;
+      tickerRange.value = String(x);
+      tickerLabel.textContent = (Number.isInteger(x) ? String(x) : x.toFixed(1)) + "x";
+    }
+    syncTickerControl();
+    tickerRange.addEventListener("input", () => {
+      state.tickerX = clampTickerX(tickerRange.value);
+      syncTickerControl();
+      savePrefs();
     });
 
     document.getElementById("fs-btn").addEventListener("click", () => {
