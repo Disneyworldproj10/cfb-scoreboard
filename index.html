@@ -1343,20 +1343,28 @@
       border: 1px solid #222;
       padding: 6px 8px;
     }
+    body.led .rotate-bar,
+    body.led .rot-progress {
+      position: fixed; /* viewport, so the bar sits on the ticker, not the scores */
+    }
     body.led .rotate-bar {
       left: 12px;
       right: 12px;
-      bottom: calc(var(--ticker-h, 56px) + 14px);
-      background: rgba(0,0,0,0.82);
+      bottom: 0;
+      background: rgba(0,0,0,0.92);
       border: 1px solid #222;
       padding: 6px 10px;
       justify-content: flex-start;
+      /* Overlay the ticker, not the score digits. */
+      max-height: var(--ticker-h, 56px);
+      box-sizing: border-box;
     }
     body.led .rot-progress {
       left: 12px;
       right: 12px;
-      bottom: calc(var(--ticker-h, 56px) + 4px);
+      bottom: 0;
       margin-top: 0;
+      height: 3px;
     }
     body.led.controls-on .topbar,
     body.led.controls-on .rotate-bar,
@@ -1663,15 +1671,24 @@
       body.led .rotate-bar {
         left: max(8px, env(safe-area-inset-left, 0px));
         right: max(8px, env(safe-area-inset-right, 0px));
-        bottom: calc(var(--ticker-h) + env(safe-area-inset-bottom, 0px) + 10px);
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 8px 10px;
+        bottom: env(safe-area-inset-bottom, 0px);
+        flex-wrap: nowrap;
+        gap: 6px;
+        padding: 4px 8px;
+        padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
+        max-height: calc(var(--ticker-h) + env(safe-area-inset-bottom, 0px));
+        overflow-x: auto;
       }
+      body.led .rotate-bar .dwell { width: auto; margin-left: 0; flex: 0 0 auto; font-size: 0; gap: 4px; }
+      body.led #dwell-label,
+      body.led #ticker-label { font-size: 0.75rem; min-width: 1.8em; }
+      body.led #dwell-range,
+      body.led #ticker-range { width: 52px; flex: 0 0 52px; }
+      body.led #rot-pos { min-width: 3.4rem; font-size: 0.8rem; }
       body.led .rot-progress {
         left: max(8px, env(safe-area-inset-left, 0px));
         right: max(8px, env(safe-area-inset-right, 0px));
-        bottom: calc(var(--ticker-h) + env(safe-area-inset-bottom, 0px) + 2px);
+        bottom: env(safe-area-inset-bottom, 0px);
       }
     }
 
@@ -1757,12 +1774,14 @@
       body.led .rotate-bar {
         left: max(8px, env(safe-area-inset-left, 0px));
         right: max(8px, env(safe-area-inset-right, 0px));
-        bottom: calc(var(--ticker-h) + env(safe-area-inset-bottom, 0px) + 6px);
+        bottom: env(safe-area-inset-bottom, 0px);
+        max-height: calc(var(--ticker-h) + env(safe-area-inset-bottom, 0px));
+        padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
       }
       body.led .rot-progress {
         left: max(8px, env(safe-area-inset-left, 0px));
         right: max(8px, env(safe-area-inset-right, 0px));
-        bottom: calc(var(--ticker-h) + env(safe-area-inset-bottom, 0px) + 1px);
+        bottom: env(safe-area-inset-bottom, 0px);
       }
     }
 
@@ -1770,7 +1789,7 @@
     html, body.led { overflow: hidden; }
 
     body.led .wrap > .cabinet-grid { z-index: 0; border-radius: 0; }
-    body.led #board { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    body.led #board { position: relative; z-index: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; }
     body.led.view-grid #grid-view { flex: 1; min-height: 0; overflow: auto; position: relative; z-index: 1; }
     body.led .led-ticker { z-index: 2; }
 
@@ -4052,6 +4071,40 @@
       ];
     }
 
+    // Chrome/GPU drawImage silently drops a source canvas wider than the
+    // max texture (often 16384 or 65535). Tile the prerendered ticker.
+    const TICKER_TILE_MAX = 8192;
+
+    function buildTickerStrip(runs, pitch) {
+      const width = Math.max(pitch, measureLedRuns(runs, pitch));
+      const height = Math.max(1, LED_ROWS * pitch);
+      const tiles = [];
+      const n = Math.max(1, Math.ceil(width / TICKER_TILE_MAX));
+      for (let i = 0; i < n; i++) {
+        const x0 = i * TICKER_TILE_MAX;
+        const w = Math.max(1, Math.ceil(Math.min(TICKER_TILE_MAX, width - x0)));
+        const tile = document.createElement("canvas");
+        tile.width = w;
+        tile.height = height;
+        drawLedRuns(tile.getContext("2d"), runs, -x0, 0, pitch);
+        tiles.push(tile);
+      }
+      return { tiles: tiles, width: width, pitch: pitch };
+    }
+
+    function blitTickerStrip(ctx, pack, x, y) {
+      const tiles = pack && pack.tiles;
+      if (!tiles || !tiles.length) return;
+      let dx = x;
+      const viewW = ctx.canvas.width;
+      for (let i = 0; i < tiles.length; i++) {
+        const tile = tiles[i];
+        const tw = tile.width;
+        if (dx + tw > 0 && dx < viewW) ctx.drawImage(tile, dx, y);
+        dx += tw;
+      }
+    }
+
     function drawTickerFrame(ts) {
       const cv = document.getElementById("ticker-canvas");
       if (!cv) { tickerAnim.raf = 0; return; }
@@ -4070,18 +4123,14 @@
       const pitch = Math.max(2, Math.floor(cv.height / LED_ROWS));
       const runs = tickerAnim.runs.length ? tickerAnim.runs : [{ t: "  NO GAMES  ", c: "#ffb000" }];
       const sig = tickerAnim.sig || "empty";
-      if (!tickerAnim.strip || tickerAnim.stripPitch !== pitch || tickerAnim.stripSig !== sig) {
-        const total0 = Math.max(pitch, measureLedRuns(runs, pitch));
-        const strip = document.createElement("canvas");
-        strip.width = Math.max(1, Math.ceil(total0));
-        strip.height = Math.max(1, LED_ROWS * pitch);
-        drawLedRuns(strip.getContext("2d"), runs, 0, 0, pitch);
-        tickerAnim.strip = strip;
+      if (!tickerAnim.pack || tickerAnim.pack.pitch !== pitch || tickerAnim.stripSig !== sig) {
+        tickerAnim.pack = buildTickerStrip(runs, pitch);
         tickerAnim.stripPitch = pitch;
         tickerAnim.stripSig = sig;
-        tickerAnim.stripWidth = total0;
+        tickerAnim.stripWidth = tickerAnim.pack.width;
+        tickerAnim.strip = tickerAnim.pack.tiles[0] || null;
       }
-      const total = tickerAnim.stripWidth || Math.max(pitch, measureLedRuns(runs, pitch));
+      const total = Math.max(1, tickerAnim.stripWidth || tickerAnim.pack.width || pitch);
       if (!tickerAnim.last) tickerAnim.last = ts;
       const dt = Math.min(50, ts - tickerAnim.last);
       tickerAnim.last = ts;
@@ -4092,9 +4141,8 @@
       ctx.fillRect(0, 0, cv.width, cv.height);
       const y = Math.floor((cv.height - LED_ROWS * pitch) / 2);
       const start = -Math.floor(tickerAnim.offset);
-      const strip = tickerAnim.strip;
       for (let x = start; x < cv.width + total; x += total) {
-        ctx.drawImage(strip, x, y);
+        blitTickerStrip(ctx, tickerAnim.pack, x, y);
       }
     }
 
@@ -4570,6 +4618,7 @@
         tickerAnim.runs = runs;
         tickerAnim.sig = sig;
         tickerAnim.strip = null;
+        tickerAnim.pack = null;
       }
       startTickerLoop();
     }
