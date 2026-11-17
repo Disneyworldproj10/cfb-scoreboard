@@ -1062,6 +1062,7 @@
       --status-pad-y: 4px;
       --status-band: #0b1a3a;
       --status-band-edge: #2a4a78;
+      --name-gap: 24px;
       --logo-size: 160px;
       --pad: 8px;
       --spot-pad: 6px;
@@ -1901,7 +1902,7 @@
       align-items: stretch;
       gap: clamp(16px, 3.5vw, 72px);
       min-height: 0;
-      padding: var(--spot-gap, 6px) var(--spot-pad, 6px) 0;
+      padding: var(--name-gap, 24px) var(--spot-pad, 6px) 0;
       box-sizing: border-box;
     }
     body.led .spot-team {
@@ -2772,7 +2773,7 @@
       const chromeCap = Math.round(h * 0.16);
       statusH = clampNum(Math.max(statusH, minGlyphCss), 24, Math.max(minGlyphCss, chromeCap));
       tickerH = clampNum(Math.max(tickerH, minGlyphCss), 32, Math.max(tickerH, minGlyphCss, chromeCap + 24));
-      const nameFlex = mode === "tall" ? 36 : 32;
+      let nameFlex = mode === "tall" ? 36 : 32;
       const alertLogo = mode === "tall"
         ? Math.round(Math.min(w * 0.42, h * 0.22))
         : Math.round(Math.min(h * 0.30, w * 0.20, 420));
@@ -2782,14 +2783,29 @@
       const bezel = clampNum(Math.round(short / 160), 3, 14);
       const spotPad = clampNum(Math.round(short * 0.01), 4, 18);
       const spotGap = clampNum(Math.round(short * 0.01), 4, 16);
+      const statusPadY = clampNum(Math.round(statusH * 0.1), h < 500 ? 2 : 3, 10);
+      const bandH = statusH + statusPadY * 2 + 1;
+      // Clear air between the navy status band and the name row (~half the band).
+      const nameGap = clampNum(Math.round(bandH * (h < 500 ? 0.45 : 0.5)), 16, 72);
+      // The extra gap comes out of the name row, not the score digits.
+      const wrapPadEst = h < 500 ? 4 : (w <= 700 && aspect <= 0.75 ? 6 : pad);
+      const teamsBox = Math.max(1, h - wrapPadEst * 2 - tickerH - bandH);
+      const split = mode === "tall" ? 2 : 1;
+      const between = mode === "tall" ? spotGap : 0;
+      const oldTeamH = Math.max(1, (teamsBox - spotGap - between) / split);
+      const newTeamH = Math.max(1, (teamsBox - nameGap - between) / split);
+      if (newTeamH < oldTeamH) {
+        const kept = oldTeamH * (1 - nameFlex / 100);
+        nameFlex = clampNum(Math.round((1 - kept / newTeamH) * 100), mode === "tall" ? 28 : 24, nameFlex);
+      }
       const root = document.documentElement;
       const px = (n) => Math.max(1, Math.round(n)) + "px";
       root.style.setProperty("--app-w", px(w));
       root.style.setProperty("--app-h", px(h));
       root.style.setProperty("--ticker-h", px(tickerH));
-      const statusPadY = clampNum(Math.round(statusH * 0.1), h < 500 ? 2 : 3, 10);
       root.style.setProperty("--status-h", px(statusH));
       root.style.setProperty("--status-pad-y", px(statusPadY));
+      root.style.setProperty("--name-gap", px(nameGap));
       root.style.setProperty("--logo-size", px(logo));
       root.style.setProperty("--pad", px(pad));
       root.style.setProperty("--spot-pad", px(spotPad));
