@@ -3121,6 +3121,121 @@
       return fallback;
     }
 
+    function parseRgb(hex) {
+      const s = String(hex || "").replace("#", "");
+      if (s.length !== 6) return null;
+      const r = parseInt(s.slice(0, 2), 16);
+      const g = parseInt(s.slice(2, 4), 16);
+      const b = parseInt(s.slice(4, 6), 16);
+      if ([r, g, b].some((n) => Number.isNaN(n))) return null;
+      return [r, g, b];
+    }
+    function srgbToLin(c) {
+      const x = c / 255;
+      return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    }
+    function relativeLuminance(hex) {
+      const rgb = parseRgb(hex);
+      if (!rgb) return 0;
+      return 0.2126 * srgbToLin(rgb[0]) + 0.7152 * srgbToLin(rgb[1]) + 0.0722 * srgbToLin(rgb[2]);
+    }
+    function contrastOnBlack(hex) {
+      return (relativeLuminance(hex) + 0.05) / 0.05;
+    }
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h = 0, s = 0, l = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+        else if (max === g) h = (b - r) / d + 2;
+        else h = (r - g) / d + 4;
+        h /= 6;
+      }
+      return [h, s, l];
+    }
+    function hslToRgb(h, s, l) {
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+        return p;
+      };
+      let r, g, b;
+      if (s === 0) r = g = b = l;
+      else {
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1 / 3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1 / 3);
+      }
+      return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+    }
+    function hexFromRgb(r, g, b) {
+      return "#" + [r, g, b].map((n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0")).join("");
+    }
+    function isWhiteishHex(hex) {
+      const rgb = parseRgb(hex);
+      if (!rgb) return false;
+      const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+      return hsl[2] >= 0.85 && hsl[1] <= 0.25;
+    }
+    function isGrayishHex(hex) {
+      const rgb = parseRgb(hex);
+      if (!rgb) return false;
+      return rgbToHsl(rgb[0], rgb[1], rgb[2])[1] <= 0.18;
+    }
+    // WCAG large-text AA (4.5:1) on black. Cap lightness so a boosted navy
+    // stays a tinted color instead of colliding with white name labels.
+    const SCORE_MIN_CONTRAST = 3.5;
+    function isNearBlackHex(hex) {
+      const rgb = parseRgb(hex);
+      if (!rgb) return true;
+      return Math.max(rgb[0], rgb[1], rgb[2]) <= 24 && relativeLuminance(hex) < 0.015;
+    }
+    function lightenToContrast(hex, minContrast) {
+      const rgb = parseRgb(hex);
+      if (!rgb) return hex;
+      if (contrastOnBlack(hex) >= minContrast) return hex;
+      const hsl = rgbToHsl(rgb[0], rgb[1], rgb[2]);
+      const lCap = isWhiteishHex(hex) ? 0.98 : 0.88;
+      let lo = hsl[2], hi = lCap, best = hex;
+      for (let i = 0; i < 12; i++) {
+        const mid = (lo + hi) / 2;
+        const c = hexFromRgb.apply(null, hslToRgb(hsl[0], hsl[1], mid));
+        if (contrastOnBlack(c) >= minContrast) { best = c; hi = mid; }
+        else lo = mid;
+      }
+      if (contrastOnBlack(best) >= minContrast) return best;
+      for (let sat = hsl[1]; sat >= 0; sat -= 0.08) {
+        const c = hexFromRgb.apply(null, hslToRgb(hsl[0], Math.max(0, sat), lCap));
+        best = c;
+        if (contrastOnBlack(c) >= minContrast) return c;
+      }
+      return best;
+    }
+    function scoreTeamColor(team) {
+      const fallback = "#ff5a5a";
+      const primary = hexColor(team && team.color, "");
+      const alt = hexColor(team && team.alternateColor, "");
+      let chosen = primary || alt || fallback;
+      if (contrastOnBlack(chosen) < SCORE_MIN_CONTRAST) {
+        const altUsable = alt
+          && alt.toLowerCase() !== chosen.toLowerCase()
+          && contrastOnBlack(alt) >= 4.5
+          && !(isWhiteishHex(alt) && !isNearBlackHex(chosen))
+          && !(isGrayishHex(alt) && !isGrayishHex(chosen) && contrastOnBlack(chosen) >= 2.5);
+        if (altUsable) chosen = alt;
+        else chosen = lightenToContrast(chosen, SCORE_MIN_CONTRAST);
+      }
+      return chosen;
+    }
+
     function isDarkHex(hex) {
       const s = String(hex || "").replace("#", "");
       if (s.length !== 6) return false;
@@ -3951,7 +4066,7 @@
       return { pitch: Math.max(2, pitch), cols: cols, maxChars: maxChars };
     }
 
-    const SCORE_DASH_COLOR = "#c05050";
+    const SCORE_DASH_COLOR = "#8a8a8a";
     // Half-digit wide (4 base / 8 fine columns), 2 fine rows thick, at the
     // score pitch, centered on the digit cap-height midline.
     const SCORE_DASH_COLS = 4 * LED_SCALE;
@@ -4089,10 +4204,7 @@
     }
 
     function scoreLedColor(competitor, isFinal, isPre) {
-      if (isPre) return "#3a3a3a";
-      if (isFinal && competitor.winner === true) return "#00ff44";
-      if (isFinal && competitor.winner === false) return "#7a2020";
-      return "#ff2a2a";
+      return scoreTeamColor((competitor && competitor.team) || competitor || {});
     }
 
     function ledCanvas(tagClass, attrs, cssClass) {
@@ -4239,7 +4351,7 @@
             '<div class="meta">' + escapeHtml([abbrev, record].filter(Boolean).join(" · ")) + "</div>" +
           "</div>" +
           footballSvg("poss") +
-          '<div class="score' + (isPre ? " blank" : "") + '">' + escapeHtml(score) + "</div>" +
+          '<div class="score' + (isPre ? " blank" : "") + '" style="color:' + scoreLedColor(competitor, isFinal, isPre) + '">' + escapeHtml(score) + "</div>" +
         "</div>"
       );
     }
