@@ -1208,19 +1208,27 @@
     body.led .led-venue-slot {
       flex: 1 1 0;
       min-width: 0;
-      height: 100%;
+      height: 62%;
+      align-self: center;
       position: relative;
     }
-    body.led .led-wx-icon,
-    body.led .led-wx-cv {
+    body.led .led-wx-icon {
       flex: 0 0 var(--venue-h, 28px);
       width: var(--venue-h, 28px);
       height: var(--venue-h, 28px);
       display: block;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    body.led .led-wx-icon svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
     }
     body.led .led-wx-temp {
       flex: 0 0 auto;
-      width: calc(var(--venue-h, 28px) * 2.1);
+      width: max(52px, calc(var(--venue-h, 28px) * 1.7));
       height: 100%;
       position: relative;
     }
@@ -2925,7 +2933,7 @@
       const spotGap = clampNum(Math.round(short * 0.01), 4, 16);
       const statusPadY = clampNum(Math.round(statusH * 0.1), h < 500 ? 2 : 3, 10);
       const bandH = statusH + statusPadY * 2 + 1;
-      const venueH = clampNum(Math.round(statusH * 0.62), h < 500 ? 18 : 22, 40);
+      const venueH = clampNum(Math.round(statusH * 0.95), h < 500 ? 26 : 32, 72);
       const topH = bandH + venueH + 2;
       // Gap under the (now taller) status+venue band; keep it based on the status band
       // so the extra venue row does not crowd the names or shrink the scores.
@@ -4354,8 +4362,8 @@
         || (scope.classList && scope.classList.contains("msg-screen") ? scope : null)
         || (document.querySelector && document.querySelector(".msg-screen"));
       if (msgRoot && document.contains(msgRoot)) layoutAndPaintMessage(msgRoot);
-      (scope.querySelectorAll ? scope.querySelectorAll("canvas.led-wx-cv") : []).forEach((cv) => {
-        try { paintWxIcon(cv, cv.dataset.wxKind || ""); } catch (e) {}
+      (scope.querySelectorAll ? scope.querySelectorAll(".led-wx-icon") : []).forEach((el) => {
+        try { setWxIcon(el, el.dataset.wxKind || ""); } catch (e) {}
       });
       (scope.querySelectorAll ? scope.querySelectorAll(".spot-venue") : []).forEach((row) => {
         try { fitVenueSlot(row); } catch (e) {}
@@ -4664,8 +4672,10 @@
         if ([19, 20, 21, 22, 23, 24, 25, 26, 29, 43, 44].includes(idNum)) return "snow";
         if ([12, 13, 14, 18, 39, 40].includes(idNum)) return "rain";
         if ([7, 8, 38].includes(idNum)) return "cloudy";
-        if ([3, 4, 5, 6, 35, 36, 37].includes(idNum)) return "partly-cloudy";
-        if ([1, 2, 30, 31, 33, 34].includes(idNum)) return "sun";
+        if ([35, 36, 37].includes(idNum)) return "partly-cloudy-night";
+        if ([3, 4, 5, 6].includes(idNum)) return "partly-cloudy";
+        if ([33, 34].includes(idNum)) return "moon";
+        if ([1, 2, 30, 31].includes(idNum)) return "sun";
       }
       if (/thunder|t-?storm|lightning/.test(name)) return "thunderstorm";
       if (/snow|flurries|sleet|blizzard|ice|freezing/.test(name)) return "snow";
@@ -4679,17 +4689,32 @@
       return "partly-cloudy";
     }
 
-    function wxKindFromWmo(code, windMph) {
+    function isNightAt(date) {
+      const d = date instanceof Date ? date : new Date(date);
+      if (!Number.isFinite(d.getTime())) return false;
+      const hour = Number(new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/New_York", hour: "numeric", hour12: false
+      }).format(d));
+      return hour < 6 || hour >= 19;
+    }
+    function withNightKind(kind, night) {
+      if (!night) return kind;
+      if (kind === "sun") return "moon";
+      if (kind === "partly-cloudy") return "partly-cloudy-night";
+      return kind;
+    }
+    function wxKindFromWmo(code, windMph, night) {
       const c = Number(code);
-      if (c >= 95) return "thunderstorm";
-      if ([71, 73, 75, 77, 85, 86].includes(c)) return "snow";
-      if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(c)) return "rain";
-      if ([45, 48].includes(c)) return "fog";
-      if (c === 3 || c === 8) return "cloudy";
-      if (c === 2 || c === 1) return "partly-cloudy";
-      if ((c === 0 || c === 1) && Number(windMph) >= 25) return "wind";
-      if (Number(windMph) >= 32) return "wind";
-      return "sun";
+      let kind = "sun";
+      if (c >= 95) kind = "thunderstorm";
+      else if ([71, 73, 75, 77, 85, 86].includes(c)) kind = "snow";
+      else if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(c)) kind = "rain";
+      else if ([45, 48].includes(c)) kind = "fog";
+      else if (c === 3 || c === 8) kind = "cloudy";
+      else if (c === 2 || c === 1) kind = "partly-cloudy";
+      else if ((c === 0 || c === 1) && Number(windMph) >= 25) kind = "wind";
+      else if (Number(windMph) >= 32) kind = "wind";
+      return withNightKind(kind, night);
     }
 
     function venueInfo(event) {
@@ -4722,20 +4747,19 @@
     function venueLabel(info, maxChars) {
       if (!info) return "";
       const loc = [info.city, info.state].filter(Boolean).join(", ");
-      const names = [info.name, shortenVenueName(info.name)].filter(Boolean);
+      const strip = (n) => String(n || "").replace(/\s+(Stadium|Field|Arena|Coliseum|Dome|Center|Park|Pavilion|Gym)$/i, "").trim();
+      const names = [info.name, shortenVenueName(info.name), strip(info.name), strip(shortenVenueName(info.name))].filter(Boolean);
       const uniq = [];
       names.forEach((n) => { if (n && !uniq.includes(n)) uniq.push(n); });
       const candidates = [];
-      uniq.forEach((n) => {
-        if (loc) candidates.push(n + ", " + loc);
-        candidates.push(n);
-      });
+      uniq.forEach((n) => { if (loc) candidates.push(n + ", " + loc); });
+      uniq.forEach((n) => candidates.push(n));
       if (loc) candidates.push(loc);
       const limit = Math.max(8, maxChars || 80);
       const fit = candidates.find((s) => s.length <= limit);
       if (fit) return fit;
-      const raw = candidates[0] || "";
-      return raw.slice(0, limit).trim();
+      // Prefer a complete city/state (the painter can scale it) over a mid-word cut.
+      return loc || uniq[uniq.length - 1] || candidates[0] || "";
     }
 
     function fitVenueSlot(row) {
@@ -4744,13 +4768,11 @@
       const cssH = row.clientHeight || 28;
       const cssW = (cv.parentElement && cv.parentElement.clientWidth) || cv.clientWidth || 200;
       const dpr = ledDpr();
-      const pitch = Math.max(LED_MIN_PITCH, fitLedPitch(cssH, dpr, LED_ROWS));
+      const pitch = Math.max(2, fitLedPitch(cssH, dpr, LED_ROWS));
       const maxChars = Math.max(8, Math.floor((cssW * dpr) / (LED_ADV * pitch)));
       const raw = String(cv.dataset.text || "");
-      // Re-shorten from the full label stored on the row if present.
-      const full = row.dataset.venueFull || raw;
       const next = venueLabel({
-        name: row.dataset.venueName || full,
+        name: row.dataset.venueName || row.dataset.venueFull || raw,
         city: row.dataset.venueCity || "",
         state: row.dataset.venueState || "",
       }, maxChars);
@@ -4870,7 +4892,7 @@
       }
       const out = {
         temp: Number.isFinite(Number(temp)) ? Math.round(Number(temp)) : null,
-        kind: wxKindFromWmo(code, wind),
+        kind: wxKindFromWmo(code, wind, isNightAt(when)),
         at: Date.now(),
       };
       c.wx[key] = out;
@@ -4919,7 +4941,6 @@
 
     function applyVenueWeather(root, wx) {
       if (!root) return;
-      const icon = root.querySelector(".led-wx-cv");
       const iconWrap = root.querySelector(".led-wx-icon");
       const tempSlot = root.querySelector(".led-wx-temp");
       const tempCv = tempSlot && tempSlot.querySelector("canvas");
@@ -4928,10 +4949,9 @@
         venueCv.dataset.text = String(wx.label).toUpperCase();
         delete venueCv.dataset.lines;
       }
-      if (wx.kind && icon) {
-        icon.dataset.wxKind = wx.kind;
-        if (iconWrap) iconWrap.hidden = false;
-        paintWxIcon(icon, wx.kind);
+      if (wx.kind && iconWrap) {
+        iconWrap.hidden = false;
+        setWxIcon(iconWrap, wx.kind);
       } else if (iconWrap) {
         iconWrap.hidden = true;
       }
@@ -4944,54 +4964,31 @@
       if (root.isConnected) paintLedTreeAfterLayout(root.querySelector(".spot-venue") || root);
     }
 
-    // 8x8 LED weather icons (MSB = left). A few solid colors, pixel style.
-    const WX_ICONS = {
-      sun: [{ c: "#ffb000", r: [0x10, 0x52, 0x38, 0x7D, 0xFE, 0x7C, 0x3A, 0x48] }],
-      "partly-cloudy": [
-        { c: "#ffb000", r: [0xC8, 0x70, 0xF8, 0x70, 0x20, 0x00, 0x00, 0x00] },
-        { c: "#d8d8de", r: [0x00, 0x00, 0x06, 0x0F, 0x3F, 0x7F, 0x3E, 0x00] }
-      ],
-      cloudy: [{ c: "#c4c4cc", r: [0x00, 0x18, 0x3C, 0x7E, 0xFF, 0xFF, 0x7E, 0x00] }],
-      rain: [
-        { c: "#9aa0a8", r: [0x18, 0x3C, 0x7E, 0xFF, 0x7E, 0x00, 0x00, 0x00] },
-        { c: "#3ecbff", r: [0x00, 0x00, 0x00, 0x00, 0x00, 0x24, 0x92, 0x24] }
-      ],
-      snow: [
-        { c: "#9aa0a8", r: [0x18, 0x3C, 0x7E, 0xFF, 0x7E, 0x00, 0x00, 0x00] },
-        { c: "#ffffff", r: [0x00, 0x00, 0x00, 0x00, 0x00, 0x2A, 0x14, 0x2A] }
-      ],
-      thunderstorm: [
-        { c: "#6a7080", r: [0x18, 0x3C, 0x7E, 0xFF, 0x7E, 0x00, 0x00, 0x00] },
-        { c: "#ffb000", r: [0x00, 0x00, 0x00, 0x08, 0x1C, 0x0E, 0x04, 0x08] }
-      ],
-      fog: [{ c: "#8a8a8a", r: [0x00, 0x7E, 0x00, 0x3C, 0x00, 0x7E, 0x00, 0x3C] }],
-      wind: [{ c: "#c8e8ff", r: [0x00, 0x3C, 0x02, 0x7E, 0x00, 0x1E, 0x20, 0x1C] }],
-      dome: [{ c: "#b8c0c8", r: [0x18, 0x3C, 0x66, 0xC3, 0xC3, 0xC3, 0xFF, 0x81] }]
+    // Crisp full-color weather icons as inline SVG (no network, scales at any DPR).
+    const WX_SVG = {
+      sun: '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="wx-sun-g" cx="46%" cy="38%" r="58%"><stop offset="0%" stop-color="#fff4a8"/><stop offset="55%" stop-color="#ffc422"/><stop offset="100%" stop-color="#ff8c00"/></radialGradient></defs><g fill="#ffb000"><rect x="30" y="2" width="4" height="12" rx="2"/><rect x="30" y="50" width="4" height="12" rx="2"/><rect x="2" y="30" width="12" height="4" rx="2"/><rect x="50" y="30" width="12" height="4" rx="2"/><rect x="9.7" y="9.7" width="4" height="12" rx="2" transform="rotate(-45 11.7 15.7)"/><rect x="50.3" y="9.7" width="4" height="12" rx="2" transform="rotate(45 52.3 15.7)"/><rect x="9.7" y="42.3" width="4" height="12" rx="2" transform="rotate(45 11.7 48.3)"/><rect x="50.3" y="42.3" width="4" height="12" rx="2" transform="rotate(-45 52.3 48.3)"/></g><circle cx="32" cy="32" r="15.5" fill="url(#wx-sun-g)"/></svg>',
+      moon: '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="wx-moon-g" cx="38%" cy="34%" r="62%"><stop offset="0%" stop-color="#fff6d0"/><stop offset="70%" stop-color="#e6d59a"/><stop offset="100%" stop-color="#c4b06a"/></radialGradient><mask id="wx-moon-m"><circle cx="32" cy="32" r="18" fill="#fff"/><circle cx="42" cy="26" r="14" fill="#000"/></mask></defs><circle cx="32" cy="32" r="18" fill="url(#wx-moon-g)" mask="url(#wx-moon-m)"/><circle cx="26" cy="36" r="2.2" fill="#d2c48a" opacity=".45"/><circle cx="30" cy="28" r="1.4" fill="#d2c48a" opacity=".35"/></svg>',
+      "partly-cloudy": '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="wx-pc-sun" cx="45%" cy="40%" r="55%"><stop offset="0%" stop-color="#fff4a8"/><stop offset="100%" stop-color="#ff9d0a"/></radialGradient><linearGradient id="wx-pc-cloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#c9d2dc"/></linearGradient></defs><g fill="#ffb000"><rect x="34" y="4" width="3.2" height="9" rx="1.6"/><rect x="48.2" y="10.2" width="3.2" height="9" rx="1.6" transform="rotate(45 49.8 14.7)"/><rect x="54" y="24" width="3.2" height="9" rx="1.6" transform="rotate(90 55.6 28.5)"/></g><circle cx="38" cy="24" r="11" fill="url(#wx-pc-sun)"/><path d="M18 48h30a10 10 0 0 0 1-20 13 13 0 0 0-24.5-5.2A11 11 0 0 0 18 48z" fill="url(#wx-pc-cloud)"/><path d="M18 48h30a10 10 0 0 0 1-20 13 13 0 0 0-24.5-5.2A11 11 0 0 0 18 48z" fill="none" stroke="#8fa0b0" stroke-width="1.2" stroke-linejoin="round" opacity=".35"/></svg>',
+      "partly-cloudy-night": '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><radialGradient id="wx-pcn-moon" cx="38%" cy="34%" r="62%"><stop offset="0%" stop-color="#fff6d0"/><stop offset="100%" stop-color="#c4b06a"/></radialGradient><mask id="wx-pcn-m"><circle cx="38" cy="22" r="12" fill="#fff"/><circle cx="45" cy="18" r="9" fill="#000"/></mask><linearGradient id="wx-pcn-cloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8eef5"/><stop offset="100%" stop-color="#9aa8b8"/></linearGradient></defs><circle cx="38" cy="22" r="12" fill="url(#wx-pcn-moon)" mask="url(#wx-pcn-m)"/><path d="M18 50h30a10 10 0 0 0 1-20 13 13 0 0 0-24.5-5.2A11 11 0 0 0 18 50z" fill="url(#wx-pcn-cloud)"/><path d="M18 50h30a10 10 0 0 0 1-20 13 13 0 0 0-24.5-5.2A11 11 0 0 0 18 50z" fill="none" stroke="#7b8898" stroke-width="1.2" stroke-linejoin="round" opacity=".4"/></svg>',
+      cloudy: '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="wx-cl-back" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#b8c3d0"/><stop offset="100%" stop-color="#7d8b9a"/></linearGradient><linearGradient id="wx-cl-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f4f7fa"/><stop offset="100%" stop-color="#b0bcc8"/></linearGradient></defs><path d="M16 36h26a8.5 8.5 0 0 0 .8-17 11 11 0 0 0-20.7-4.5A9.5 9.5 0 0 0 16 36z" fill="url(#wx-cl-back)" transform="translate(6 -6)"/><path d="M14 50h34a11 11 0 0 0 1.1-22 14 14 0 0 0-26.6-5.6A12 12 0 0 0 14 50z" fill="url(#wx-cl-front)"/></svg>',
+      rain: '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="wx-rn-cloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#eef2f6"/><stop offset="100%" stop-color="#8f9eae"/></linearGradient></defs><path d="M16 36h32a10 10 0 0 0 1-20 13 13 0 0 0-24.8-5.3A11 11 0 0 0 16 36z" fill="url(#wx-rn-cloud)"/><g fill="#3aa0e8"><path d="M22 42c0 0-1.2 5.5-1.2 7.2a2.4 2.4 0 1 0 4.8 0c0-1.7-1.2-7.2-1.2-7.2z"/><path d="M32 44c0 0-1.2 6.2-1.2 8a2.4 2.4 0 1 0 4.8 0c0-1.8-1.2-8-1.2-8z"/><path d="M42 42c0 0-1.2 5.5-1.2 7.2a2.4 2.4 0 1 0 4.8 0c0-1.7-1.2-7.2-1.2-7.2z"/></g></svg>',
+      snow: '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="wx-sn-cloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f7fafc"/><stop offset="100%" stop-color="#a8b6c4"/></linearGradient></defs><path d="M16 34h32a10 10 0 0 0 1-20 13 13 0 0 0-24.8-5.3A11 11 0 0 0 16 34z" fill="url(#wx-sn-cloud)"/><g fill="none" stroke="#f4f8ff" stroke-width="1.7" stroke-linecap="round"><path d="M22 42v8M19 44.5h6M19.8 47.6l4.4-3.2M19.8 44.4l4.4 3.2"/><path d="M32 46v8M29 48.5h6M29.8 51.6l4.4-3.2M29.8 48.4l4.4 3.2"/><path d="M42 42v8M39 44.5h6M39.8 47.6l4.4-3.2M39.8 44.4l4.4 3.2"/></g></svg>',
+      thunderstorm: '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="wx-st-cloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#c5cdd8"/><stop offset="100%" stop-color="#4a5564"/></linearGradient><linearGradient id="wx-st-bolt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fff3a0"/><stop offset="100%" stop-color="#ff9d00"/></linearGradient></defs><path d="M16 34h32a10 10 0 0 0 1-20 13 13 0 0 0-24.8-5.3A11 11 0 0 0 16 34z" fill="url(#wx-st-cloud)"/><path d="M36 32 26 48h8l-4 14 16-20h-8l6-10z" fill="url(#wx-st-bolt)" stroke="#ffe566" stroke-width=".6" stroke-linejoin="round"/></svg>',
+      fog: '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="wx-fg-cloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#dce3ea"/><stop offset="100%" stop-color="#9aa6b2"/></linearGradient></defs><path d="M18 28h28a8.5 8.5 0 0 0 .8-17 11 11 0 0 0-20.8-4.4A9.5 9.5 0 0 0 18 28z" fill="url(#wx-fg-cloud)" opacity=".7"/><g fill="none" stroke="#c5ced6" stroke-width="4" stroke-linecap="round"><path d="M10 36h44" opacity=".95"/><path d="M14 44h36" opacity=".75"/><path d="M12 52h40" opacity=".55"/></g></svg>',
+      wind: '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g fill="none" stroke="#d7eefc" stroke-width="3.2" stroke-linecap="round"><path d="M8 24h34a8 8 0 1 0-8-8"/><path d="M8 36h40a7 7 0 1 0-7-7"/><path d="M8 48h28a6 6 0 1 1-6 6"/></g></svg>',
+      dome: '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="wx-dm-g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f3f6fa"/><stop offset="45%" stop-color="#b7c4d2"/><stop offset="100%" stop-color="#6d7c8c"/></linearGradient><linearGradient id="wx-dm-base" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d5dee6"/><stop offset="100%" stop-color="#8a96a4"/></linearGradient></defs><path d="M10 42c2-18 12-30 22-30s20 12 22 30z" fill="url(#wx-dm-g)"/><path d="M10 42c2-18 12-30 22-30s20 12 22 30z" fill="none" stroke="#93a0ae" stroke-width="1.2"/><path d="M8 42h48v6H8z" fill="url(#wx-dm-base)"/><path d="M6 48h52v4H6z" fill="#6e7b8a"/><path d="M32 12v30" stroke="#ffffff" stroke-width="1.1" opacity=".35"/><path d="M16 42c2-12 8-22 16-22" fill="none" stroke="#ffffff" stroke-width="1.4" opacity=".28"/></svg>'
     };
 
-    function paintWxIcon(cv, kind) {
-      if (!cv) return;
-      const dpr = ledDpr();
-      const css = Math.max(8, cv.clientWidth || (cv.parentElement && cv.parentElement.clientWidth) || 28);
-      const sized = sizeLedCanvas(cv, css, css, dpr, false);
-      const ctx = cv.getContext("2d");
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, sized.w, sized.h);
-      const layers = WX_ICONS[kind] || WX_ICONS["partly-cloudy"];
-      const pitch = Math.max(2, Math.floor(Math.min(sized.w, sized.h) / 8));
-      const ox = Math.floor((sized.w - pitch * 8) / 2);
-      const oy = Math.floor((sized.h - pitch * 8) / 2);
-      layers.forEach((layer) => {
-        const rows = layer.r;
-        for (let row = 0; row < 8; row++) {
-          const bits = rows[row] || 0;
-          for (let col = 0; col < 8; col++) {
-            if (bits & (0x80 >> col)) {
-              drawLedDot(ctx, ox + (col + 0.5) * pitch, oy + (row + 0.5) * pitch, pitch, layer.c);
-            }
-          }
-        }
-      });
+    function wxIconSvg(kind) {
+      return WX_SVG[kind] || WX_SVG["partly-cloudy"];
+    }
+
+    function setWxIcon(el, kind) {
+      if (!el) return;
+      const next = kind || "";
+      if (el.dataset.wxKind === next && el.querySelector("svg")) return;
+      el.dataset.wxKind = next;
+      el.innerHTML = next ? wxIconSvg(next) : "";
     }
 
     function venueRowHtml(event) {
@@ -5010,8 +5007,8 @@
         '<div class="led-venue-slot">' +
           ledCanvas("led-text-cv", { "data-text": String(wx.label || "").toUpperCase(), "data-color": "#d0d8e8", "data-led-align": "left" }, "led-text-cv led-fill") +
         "</div>" +
-        '<div class="led-wx-icon"' + iconHidden + '>' +
-          '<canvas class="led-wx-cv" data-wx-kind="' + escapeHtml(wx.kind || "") + '" aria-hidden="true"></canvas>' +
+        '<div class="led-wx-icon"' + iconHidden + ' data-wx-kind="' + escapeHtml(wx.kind || "") + '" aria-hidden="true">' +
+          (wx.kind ? wxIconSvg(wx.kind) : "") +
         "</div>" +
         '<div class="led-wx-temp"' + tempHidden + '>' +
           ledCanvas("led-text-cv", { "data-text": tempText, "data-color": "#ffb000", "data-led-align": "right" }, "led-text-cv led-fill") +
