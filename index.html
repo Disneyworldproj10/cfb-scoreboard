@@ -501,15 +501,28 @@
       padding: clamp(8px, 1.6vh, 28px) clamp(14px, 3vw, 48px) clamp(8px, 1.4vh, 20px);
       gap: clamp(6px, 1.2vh, 16px);
     }
-    .spotlight-stage.anim-next .spot { animation: spotInNext 0.5s ease both; }
-    .spotlight-stage.anim-prev .spot { animation: spotInPrev 0.5s ease both; }
+    .spotlight-stage { position: relative; overflow: hidden; }
+    .spotlight-stage > .spot-pending {
+      position: absolute;
+      inset: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .spotlight-stage > .spot-incoming {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .spotlight-stage.anim-next > .spot-incoming { animation: spotInNext 0.45s ease both; }
+    .spotlight-stage.anim-prev > .spot-incoming { animation: spotInPrev 0.45s ease both; }
     @keyframes spotInNext {
-      from { opacity: 0; transform: translateX(48px); }
-      to { opacity: 1; transform: none; }
+      from { transform: translateX(100%); }
+      to { transform: none; }
     }
     @keyframes spotInPrev {
-      from { opacity: 0; transform: translateX(-48px); }
-      to { opacity: 1; transform: none; }
+      from { transform: translateX(-100%); }
+      to { transform: none; }
     }
     .spot-top {
       display: flex;
@@ -4160,6 +4173,28 @@
       return [parseLedRuns(cv)];
     }
 
+    let ledBlitCv = null;
+    function acquireLedBlit(w, h) {
+      if (!ledBlitCv) ledBlitCv = document.createElement("canvas");
+      if (ledBlitCv.width !== w) ledBlitCv.width = w;
+      if (ledBlitCv.height !== h) ledBlitCv.height = h;
+      const ctx = ledBlitCv.getContext("2d");
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      return ctx;
+    }
+    function blitToCanvas(cv, w, h) {
+      if (cv.width !== w) cv.width = w;
+      if (cv.height !== h) cv.height = h;
+      const ctx = cv.getContext("2d");
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(ledBlitCv, 0, 0);
+    }
+    function ledPaintKey(w, h, pitch, align, lines, extra) {
+      return w + "x" + h + ":" + pitch + ":" + align + ":" + JSON.stringify(lines) + (extra ? ":" + extra : "");
+    }
+
+
     function paintLedTextCanvas(cv, opts) {
       opts = opts || {};
       const dpr = ledDpr();
@@ -4203,13 +4238,15 @@
         cssW = Math.max(Math.ceil(textWdev / dpr), 8);
       }
       if (opts.pitch) pitch = Math.max(2, opts.pitch);
-      const { w, h } = sizeLedCanvas(cv, cssW, cssH, dpr, !fill);
-      const ctx = cv.getContext("2d");
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, w, h);
+      const w = Math.max(1, Math.round(cssW * dpr));
+      const h = Math.max(1, Math.round(cssH * dpr));
+      if (!fill) cv.style.width = Math.max(1, Math.round(cssW)) + "px";
+      const align = opts.align || cv.dataset.ledAlign || (cv.classList.contains("led-size-score") ? "right" : (fill ? "center" : "left"));
+      const sig = ledPaintKey(w, h, pitch, align, lines, opts.pitch ? "p" : "");
+      if (cv.dataset.paintSig === sig && cv.width === w && cv.height === h) return;
+      const ctx = acquireLedBlit(w, h);
       const usedH = rowSpan * pitch;
       let y = Math.floor((h - usedH) / 2);
-      const align = opts.align || cv.dataset.ledAlign || (cv.classList.contains("led-size-score") ? "right" : (fill ? "center" : "left"));
       for (const runs of lines) {
         const lineW = measureLedRuns(runs, pitch);
         let x = 0;
@@ -4218,7 +4255,10 @@
         drawLedRuns(ctx, runs, x, y, pitch);
         y += (LED_ROWS + 1) * pitch;
       }
+      cv.dataset.paintSig = sig;
+      blitToCanvas(cv, w, h);
     }
+
 
     function isLedVisible(cv) {
       if (!cv || cv.closest("[hidden]")) return false;
@@ -4274,14 +4314,18 @@
       const colW = Math.ceil((SCORE_DASH_COLS * pitch + pitch * 2) / dpr);
       const scoresCol = cv.closest(".spot-scores");
       if (scoresCol) {
-        scoresCol.style.setProperty("--dash-col-w", Math.max(40, colW) + "px");
-        void scoresCol.offsetWidth;
+        const next = Math.max(40, colW) + "px";
+        if (scoresCol.style.getPropertyValue("--dash-col-w") !== next) {
+          scoresCol.style.setProperty("--dash-col-w", next);
+          void scoresCol.offsetWidth;
+        }
       }
       const cssW2 = cv.clientWidth || (parent && parent.clientWidth) || Math.max(cssW, colW);
-      const { w, h } = sizeLedCanvas(cv, cssW2, cssH, dpr, false);
-      const ctx = cv.getContext("2d");
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, w, h);
+      const w = Math.max(1, Math.round(cssW2 * dpr));
+      const h = Math.max(1, Math.round(cssH * dpr));
+      const sig = "dash:" + w + "x" + h + ":" + pitch;
+      if (cv.dataset.paintSig === sig && cv.width === w && cv.height === h) return;
+      const ctx = acquireLedBlit(w, h);
       const usedH = LED_ROWS * pitch;
       const originY = Math.floor((h - usedH) / 2);
       const thick = SCORE_DASH_ROWS;
@@ -4294,7 +4338,10 @@
           drawLedDot(ctx, originX + (c + 0.5) * pitch, originY + (startRow + r + 0.5) * pitch, pitch, SCORE_DASH_COLOR);
         }
       }
+      cv.dataset.paintSig = sig;
+      blitToCanvas(cv, w, h);
     }
+
 
     function paintSharedLedGroup(canvases, minChars, defaultAlign) {
       if (!canvases.length) return;
@@ -4309,6 +4356,41 @@
       });
     }
 
+    const logoImageCache = new Map();
+    function preloadLogo(url) {
+      if (!url) return Promise.resolve(null);
+      const key = String(url);
+      const hit = logoImageCache.get(key);
+      if (hit) {
+        if (hit.img && hit.img.complete && hit.img.naturalWidth) return Promise.resolve(hit.img);
+        return hit.ready;
+      }
+      const img = new Image();
+      img.decoding = "async";
+      const ready = new Promise((resolve) => {
+        const finish = () => resolve(img.naturalWidth ? img : null);
+        img.onload = () => {
+          if (typeof img.decode === "function") img.decode().then(finish, finish);
+          else finish();
+        };
+        img.onerror = () => resolve(null);
+      });
+      img.src = key;
+      logoImageCache.set(key, { img: img, ready: ready });
+      return ready;
+    }
+    function preloadEventLogos(events) {
+      (events || []).forEach((ev) => {
+        const teams = typeof orderedCompetitors === "function" ? orderedCompetitors(ev) : [];
+        teams.forEach((c) => {
+          const urls = hiResLogo(c.team || c);
+          if (urls.src) preloadLogo(urls.src);
+          if (urls.fallbackSrc) preloadLogo(urls.fallbackSrc);
+        });
+      });
+    }
+
+
     function setLogoBox(box, team, name) {
       if (!box) return;
       const urls = hiResLogo(team);
@@ -4318,7 +4400,7 @@
       if (cv) cv.dataset.text = letters;
       box.hidden = false;
       if (!urls.src) {
-        if (img) { img.removeAttribute("src"); img.hidden = true; }
+        if (img) { img.removeAttribute("src"); img.removeAttribute("data-logo-src"); img.hidden = true; }
         box.classList.add("logo-missing");
         if (cv && typeof paintLedTextCanvas === "function") paintLedTextCanvas(cv);
         return;
@@ -4335,8 +4417,17 @@
       delete img.dataset.triedFallback;
       if (urls.fallbackSrc) img.setAttribute("data-fallback-src", urls.fallbackSrc);
       else img.removeAttribute("data-fallback-src");
-      if (img.src !== urls.src) img.src = urls.src;
+      const current = img.getAttribute("data-logo-src") || img.getAttribute("src") || "";
+      if (current === urls.src && img.naturalWidth) return;
+      img.setAttribute("data-logo-src", urls.src);
+      preloadLogo(urls.src).then((decoded) => {
+        if (!img.isConnected) return;
+        if ((img.getAttribute("data-logo-src") || "") !== urls.src) return;
+        if (img.getAttribute("src") !== urls.src) img.src = urls.src;
+      });
+      if (!img.getAttribute("src")) img.src = urls.src;
     }
+
 
     document.addEventListener("error", (e) => {
       const img = e.target;
@@ -4961,7 +5052,11 @@
       } else if (tempSlot) {
         tempSlot.hidden = true;
       }
-      if (root.isConnected) paintLedTreeAfterLayout(root.querySelector(".spot-venue") || root);
+      if (root.isConnected) {
+        const row = root.querySelector(".spot-venue") || root;
+        try { fitVenueSlot(row); } catch (e) {}
+        try { paintLedTree(row); } catch (e) {}
+      }
     }
 
     // Crisp full-color weather icons as inline SVG (no network, scales at any DPR).
@@ -5207,36 +5302,267 @@
       state.rotateTimer = setTimeout(() => stepRotate(1), state.dwellMs);
     }
 
-    function paintSpotlight(event, animDir) {
-      const existing = stageEl.querySelector(".spot");
-      const same = existing && existing.getAttribute("data-id") === gameId(event);
-      if (same && !animDir) {
-        const tmp = document.createElement("div");
-        tmp.innerHTML = spotlightHtml(event);
-        const next = tmp.firstElementChild;
-        const oldImgs = [...existing.querySelectorAll("img")];
-        next.querySelectorAll("img").forEach((img) => {
-          const old = oldImgs.find((o) => o.getAttribute("src") === img.getAttribute("src"));
-          if (old) img.replaceWith(old);
+    function parseHtmlNode(html) {
+      const tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      return tmp.firstElementChild;
+    }
+
+    let stageMountGen = 0;
+    function mountStageChild(node, animDir) {
+      const gen = ++stageMountGen;
+      if (!stageEl || !node) return Promise.resolve();
+      node.classList.add("spot-pending");
+      stageEl.appendChild(node);
+      void node.offsetWidth;
+      try { paintLedTree(node); } catch (e) {}
+      const logos = [...node.querySelectorAll("img.led-logo-img")].map((img) => {
+        const src = img.getAttribute("data-logo-src") || img.getAttribute("src");
+        if (src) img.setAttribute("data-logo-src", src);
+        return preloadLogo(src);
+      });
+      const reveal = () => new Promise((resolve) => {
+        requestAnimationFrame(() => {
+          if (gen !== stageMountGen) {
+            if (node.parentElement) node.remove();
+            resolve();
+            return;
+          }
+          stageEl.classList.remove("anim-next", "anim-prev");
+          node.classList.remove("spot-pending");
+          if (animDir) node.classList.add("spot-incoming");
+          if (animDir === 1) stageEl.classList.add("anim-next");
+          if (animDir === -1) stageEl.classList.add("anim-prev");
+          if (!animDir) {
+            [...stageEl.children].forEach((ch) => { if (ch !== node) ch.remove(); });
+          }
+          let settled = false;
+          const done = () => {
+            if (settled) return;
+            settled = true;
+            [...stageEl.children].forEach((ch) => { if (ch !== node) ch.remove(); });
+            stageEl.classList.remove("anim-next", "anim-prev");
+            node.classList.remove("spot-incoming");
+            node.style.transform = "none";
+            resolve();
+          };
+          if (animDir) {
+            node.addEventListener("animationend", done, { once: true });
+            setTimeout(done, 600);
+          } else {
+            done();
+          }
         });
-        existing.replaceWith(next);
-        paintLedTreeAfterLayout(stageEl);
+      });
+      return Promise.all(logos).then(reveal, reveal);
+    }
+
+    function setLedCanvasData(cv, attrs) {
+      if (!cv) return false;
+      let dirty = false;
+      if (attrs && attrs.text != null) {
+        const t = String(attrs.text);
+        if (cv.dataset.text !== t) { cv.dataset.text = t; dirty = true; }
+      }
+      if (attrs && attrs.color != null) {
+        const c = String(attrs.color);
+        if (cv.dataset.color !== c) { cv.dataset.color = c; dirty = true; }
+      }
+      if (attrs && attrs.align != null) {
+        const a = String(attrs.align);
+        if (cv.dataset.ledAlign !== a) { cv.dataset.ledAlign = a; dirty = true; }
+      }
+      if (attrs && Object.prototype.hasOwnProperty.call(attrs, "lines")) {
+        if (attrs.lines == null) {
+          if (cv.dataset.lines) { delete cv.dataset.lines; dirty = true; }
+        } else {
+          const s = typeof attrs.lines === "string" ? attrs.lines : JSON.stringify(attrs.lines);
+          if (cv.dataset.lines !== s) { cv.dataset.lines = s; dirty = true; }
+        }
+      }
+      if (dirty) delete cv.dataset.paintSig;
+      return dirty;
+    }
+
+    function patchTeamEl(el, competitor, possessionId, isFinal, isPre) {
+      if (!el) return false;
+      const team = competitor.team || {};
+      const rank = Number(competitor.curatedRank && competitor.curatedRank.current);
+      const ranked = rank >= 1 && rank <= 25;
+      const name = team.shortDisplayName || team.location || team.displayName || "TBD";
+      const abbrev = team.abbreviation || "";
+      const letters = (abbrev || name || "?").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5) || (name || "?").toUpperCase().slice(0, 4);
+      const hasBall = possessionId && String(possessionId) === String(competitor.id || team.id);
+      const winner = competitor.winner === true;
+      const loser = isFinal && competitor.winner === false;
+      const scoreRaw = competitor.score;
+      const score = isPre || scoreRaw === "" || scoreRaw == null ? "--" : String(scoreRaw);
+      const scoreColor = scoreLedColor(competitor, isFinal, isPre);
+      let dirty = false;
+      const classes = ["spot-team", competitor.homeAway || ""];
+      if (hasBall) classes.push("has-ball");
+      if (winner) classes.push("winner");
+      if (loser) classes.push("loser");
+      const nextClass = classes.join(" ");
+      if (el.className !== nextClass) { el.className = nextClass; dirty = true; }
+      const nameWrap = el.querySelector(".spot-team-name");
+      if (nameWrap) {
+        nameWrap.classList.toggle("has-rank", ranked);
+        let rankSlot = nameWrap.querySelector(".led-rank-slot");
+        if (ranked) {
+          if (!rankSlot) {
+            rankSlot = document.createElement("div");
+            rankSlot.className = "led-rank-slot";
+            rankSlot.innerHTML = ledCanvas("led-text-cv", {"data-text": "#" + rank, "data-color": "#ffb000"}, "led-text-cv led-size-rank led-fill");
+            nameWrap.insertBefore(rankSlot, nameWrap.firstChild);
+            dirty = true;
+          } else {
+            const rcv = rankSlot.querySelector("canvas");
+            if (setLedCanvasData(rcv, { text: "#" + rank, color: "#ffb000" })) dirty = true;
+          }
+        } else if (rankSlot) {
+          rankSlot.remove();
+          dirty = true;
+        }
+        const ncv = nameWrap.querySelector(".led-name-slot canvas");
+        if (setLedCanvasData(ncv, { text: letters, color: "#ffffff" })) dirty = true;
+      }
+      const scv = el.querySelector(".spot-team-score-row .led-score-slot canvas");
+      if (setLedCanvasData(scv, { text: score, color: scoreColor, align: "right" })) dirty = true;
+      const box = el.querySelector(".led-logo-box");
+      if (box) setLogoBox(box, team, name);
+      const vh = el.querySelector(".spot-name");
+      if (vh && vh.textContent !== name) vh.textContent = name;
+      return dirty;
+    }
+
+    function patchVenueRow(root, event) {
+      const wx = weatherForEvent(event);
+      const top = root.querySelector(".spot-top");
+      let row = root.querySelector(".spot-venue");
+      if (!wx.label && !wx.kind && wx.temp == null) {
+        if (row) { row.remove(); return true; }
+        return false;
+      }
+      if (!row && top) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = venueRowHtml(event);
+        if (tmp.firstElementChild) top.appendChild(tmp.firstElementChild);
+        return true;
+      }
+      if (!row) return false;
+      const info = venueInfo(event);
+      row.dataset.venueName = info.name || "";
+      row.dataset.venueCity = info.city || "";
+      row.dataset.venueState = info.state || "";
+      row.dataset.venueFull = wx.label || "";
+      const iconWrap = row.querySelector(".led-wx-icon");
+      const tempSlot = row.querySelector(".led-wx-temp");
+      const tempCv = tempSlot && tempSlot.querySelector("canvas");
+      const venueCv = row.querySelector(".led-venue-slot canvas");
+      let dirty = false;
+      if (venueCv && wx.label) {
+        if (setLedCanvasData(venueCv, { text: String(wx.label).toUpperCase(), color: "#d0d8e8", align: "left" })) dirty = true;
+      }
+      if (wx.kind && iconWrap) {
+        if (iconWrap.hidden) { iconWrap.hidden = false; dirty = true; }
+        const prev = iconWrap.dataset.wxKind || "";
+        setWxIcon(iconWrap, wx.kind);
+        if (prev !== String(wx.kind || "")) dirty = true;
+      } else if (iconWrap && !iconWrap.hidden) {
+        iconWrap.hidden = true;
+        dirty = true;
+      }
+      const tempText = (wx.temp != null && Number.isFinite(Number(wx.temp))) ? (Math.round(Number(wx.temp)) + "°") : "";
+      if (tempText && tempCv) {
+        if (setLedCanvasData(tempCv, { text: tempText, color: "#ffb000", align: "right" })) dirty = true;
+        if (tempSlot.hidden) { tempSlot.hidden = false; dirty = true; }
+      } else if (tempSlot && !tempSlot.hidden) {
+        tempSlot.hidden = true;
+        dirty = true;
+      }
+      const a11y = [wx.label, wx.indoor ? "Indoor" : "", tempText].filter(Boolean).join(", ");
+      const vh = row.querySelector(".vh");
+      if (vh && vh.textContent !== a11y) vh.textContent = a11y;
+      if (wx.pending) requestVenueWeather(event);
+      return dirty;
+    }
+
+    function patchSpotlight(root, event) {
+      if (!root || !event) return;
+      const comp = getCompetition(event);
+      const bucket = statusBucket(event);
+      const teams = orderedCompetitors(event);
+      const away = teams[0] || {};
+      const home = teams[1] || teams[0] || {};
+      const isFinal = bucket === "final";
+      const isPre = bucket === "upcoming";
+      const isLive = bucket === "live";
+      const possessionId = isLive ? (comp.situation || {}).possession : null;
+      const network = networkOf(comp);
+      const label = statusLabel(event);
+      const badgeText = isLive ? "Live" : isFinal ? "Final" : "Upcoming";
+      const showStatus = label && label.toLowerCase() !== badgeText.toLowerCase();
+      const sit = comp.situation || {};
+      const situation = isLive
+        ? (sportOf(event) === "mlb"
+          ? baseballSituation(event)
+          : (sit.downDistanceText || sit.possessionText || (sit.lastPlay && sit.lastPlay.text) || ""))
+        : "";
+      const midBits = situation || "";
+      const line1 = [];
+      const line2 = [];
+      const sportTag = sportMeta(event).tag;
+      line1.push({ t: sportTag + "  ", c: "#3ecbff" });
+      if (isLive) line1.push({ t: "LIVE  ", c: "#ff2a2a" });
+      else if (isFinal) line1.push({ t: "FINAL  ", c: "#00ff44" });
+      else line1.push({ t: "UPCOMING  ", c: "#3ecbff" });
+      if (showStatus && label) line1.push({ t: String(label).toUpperCase() + "  ", c: "#ffffff" });
+      if (midBits) line2.push({ t: String(midBits).toUpperCase() + "  ", c: "#ffb000" });
+      if (network) line2.push({ t: String(network).toUpperCase() + "  ", c: "#ffffff" });
+      const statusLines = line2.length ? [line1, line2] : [line1];
+      const scoreOf = (c) => {
+        const raw = c.score;
+        return isPre || raw === "" || raw == null ? "--" : String(raw);
+      };
+      const awayScore = scoreOf(away);
+      const awayColor = scoreLedColor(away, isFinal, isPre);
+      const homeScore = scoreOf(home);
+      const homeColor = scoreLedColor(home, isFinal, isPre);
+      const statusA11y = [badgeText, showStatus ? label : "", midBits, network].filter(Boolean).join(" ");
+      let dirty = false;
+      const nextClass = "spot " + bucket;
+      if (root.className !== nextClass) { root.className = nextClass; dirty = true; }
+      const id = gameId(event);
+      if (root.getAttribute("data-id") !== id) root.setAttribute("data-id", id);
+      const statusCv = root.querySelector(".led-status-slot canvas");
+      if (setLedCanvasData(statusCv, { lines: statusLines })) dirty = true;
+      const topVh = root.querySelector(".spot-top > span.vh");
+      if (topVh && topVh.textContent !== statusA11y) topVh.textContent = statusA11y;
+      if (patchVenueRow(root, event)) dirty = true;
+      const teamEls = root.querySelectorAll(".spot-team");
+      if (teamEls.length < 2) {
+        mountStageChild(parseHtmlNode(spotlightHtml(event)), 0);
         return;
       }
-      stageEl.classList.remove("anim-next", "anim-prev");
-      if (animDir === 1) stageEl.classList.add("anim-next");
-      if (animDir === -1) stageEl.classList.add("anim-prev");
-      stageEl.innerHTML = spotlightHtml(event);
-      paintLedTreeAfterLayout(stageEl);
-      if (animDir) {
-        const onEnd = () => {
-          stageEl.classList.remove("anim-next", "anim-prev");
-          stageEl.querySelectorAll(".spot").forEach((el) => { el.style.transform = "none"; });
-          paintLedTreeAfterLayout(stageEl);
-        };
-        stageEl.querySelector(".spot")?.addEventListener("animationend", onEnd, { once: true });
-      }
+      if (patchTeamEl(teamEls[0], away, possessionId, isFinal, isPre)) dirty = true;
+      if (patchTeamEl(teamEls[1], home, possessionId, isFinal, isPre)) dirty = true;
+      const midScores = root.querySelectorAll(".spot-scores > .led-score-slot:not(.spot-dash-slot) > canvas.led-size-score");
+      if (midScores[0] && setLedCanvasData(midScores[0], { text: awayScore, color: awayColor, align: "right" })) dirty = true;
+      if (midScores[1] && setLedCanvasData(midScores[1], { text: homeScore, color: homeColor, align: "left" })) dirty = true;
+      if (dirty) paintLedTree(root);
     }
+
+    function paintSpotlight(event, animDir) {
+      const existing = stageEl.querySelector(".spot:not(.spot-pending)");
+      const same = existing && existing.getAttribute("data-id") === gameId(event);
+      if (same && !animDir) {
+        patchSpotlight(existing, event);
+        return;
+      }
+      mountStageChild(parseHtmlNode(spotlightHtml(event)), animDir);
+    }
+
 
     function ledWrapLines(text, maxChars) {
       maxChars = Math.max(1, maxChars | 0);
@@ -5354,11 +5680,19 @@
       }
     }
 
-    function startMessageScroll(cv, layout) {
-      stopMessageScroll();
+    function startMessageScroll(cv, layout, keepX, sig) {
+      const same = msgAnim.cv === cv && msgAnim.raf && msgAnim.sig === sig && layout && layout.scroll;
+      if (same) {
+        msgAnim.layout = layout;
+        return;
+      }
+      const x = (msgAnim.cv === cv && layout && layout.scroll && keepX) ? keepX : 0;
+      if (msgAnim.raf) cancelAnimationFrame(msgAnim.raf);
+      msgAnim.raf = 0;
       msgAnim.cv = cv;
       msgAnim.layout = layout;
-      msgAnim.x = 0;
+      msgAnim.sig = sig || "";
+      msgAnim.x = x;
       msgAnim.last = 0;
       if (!layout.scroll) {
         paintMessageFrame(cv, layout, 0);
@@ -5372,12 +5706,13 @@
         const speed = layout.pitch * 8;
         const total = layout.contentW + layout.gap;
         if (total > 0) msgAnim.x = (msgAnim.x + speed * dt) % total;
-        paintMessageFrame(msgAnim.cv, layout, msgAnim.x);
+        paintMessageFrame(msgAnim.cv, msgAnim.layout, msgAnim.x);
         msgAnim.raf = requestAnimationFrame(loop);
       };
-      paintMessageFrame(cv, layout, 0);
+      paintMessageFrame(cv, layout, msgAnim.x);
       msgAnim.raf = requestAnimationFrame(loop);
     }
+
 
     function layoutAndPaintMessage(root) {
       const cv = root.querySelector ? root.querySelector(".msg-led-cv") : null;
@@ -5388,8 +5723,10 @@
       const cssH = cv.clientHeight || root.clientHeight || 200;
       if (cssW < 8 || cssH < 8) return;
       const layout = fitMessageText(text, cssW, cssH, ledDpr());
-      startMessageScroll(cv, layout);
+      const sig = [text, Math.round(cssW), Math.round(cssH), layout.pitch, layout.scroll ? 1 : 0, layout.contentW, layout.lines.join("\n")].join("|");
+      startMessageScroll(cv, layout, msgAnim.x, sig);
     }
+
 
     function messageScreenHtml() {
       const text = String(state.message.text || "").trim();
@@ -5399,27 +5736,15 @@
     }
 
     function paintMessageSlide(animDir) {
-      const existing = stageEl.querySelector(".msg-screen");
+      const existing = stageEl.querySelector(".msg-screen:not(.spot-pending)");
       if (existing && !animDir) {
         layoutAndPaintMessage(existing);
         return;
       }
       stopMessageScroll();
-      stageEl.classList.remove("anim-next", "anim-prev");
-      if (animDir === 1) stageEl.classList.add("anim-next");
-      if (animDir === -1) stageEl.classList.add("anim-prev");
-      stageEl.innerHTML = messageScreenHtml();
-      paintLedTreeAfterLayout(stageEl);
-      if (animDir) {
-        const onEnd = () => {
-          stageEl.classList.remove("anim-next", "anim-prev");
-          const el = stageEl.querySelector(".msg-screen");
-          if (el) { el.style.transform = "none"; layoutAndPaintMessage(el); }
-        };
-        const node = stageEl.querySelector(".msg-screen");
-        if (node) node.addEventListener("animationend", onEnd, { once: true });
-      }
+      mountStageChild(parseHtmlNode(messageScreenHtml()), animDir);
     }
+
 
     function noGamesBoardHtml() {
       const ids = state.filter && state.filter !== "all" ? [state.filter] : enabledSportIds();
@@ -5514,6 +5839,8 @@
           titles[key] + " (" + list.length + ")</h2>" +
           '<div class="grid">' + list.map(cardHtml).join("") + "</div></section>";
       }
+      if (gridView.dataset.gridSig === html) return;
+      gridView.dataset.gridSig = html;
       gridView.innerHTML = html;
       paintLedTreeAfterLayout(gridView);
     }
@@ -5580,11 +5907,11 @@
       if (sig !== tickerAnim.sig) {
         tickerAnim.runs = runs;
         tickerAnim.sig = sig;
-        tickerAnim.strip = null;
-        tickerAnim.pack = null;
+        // Leave pack and offset alone; the next rAF frame swaps tiles in place.
       }
       startTickerLoop();
     }
+
 
     let controlsTimer = null;
     function hideControls() {
@@ -5682,6 +6009,7 @@
         }
         boardEl.setAttribute("aria-busy", "false");
         if (!wasSkip && alerts.length) enqueueAlerts(alerts);
+        preloadEventLogos(incoming);
         render();
         updateTimestamp();
         scheduleRefresh();
