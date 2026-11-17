@@ -1059,6 +1059,9 @@
       --app-h: 100dvh;
       --ticker-h: 56px;
       --status-h: 48px;
+      --status-pad-y: 4px;
+      --status-band: #0b1a3a;
+      --status-band-edge: #2a4a78;
       --logo-size: 160px;
       --pad: 8px;
       --spot-pad: 6px;
@@ -1176,10 +1179,18 @@
     }
 
     body.led .spot {
-      padding: var(--spot-pad, 6px);
-      gap: var(--spot-gap, 6px);
+      padding: 0 0 var(--spot-pad, 6px);
+      gap: 0;
     }
-    body.led .spot-top { min-height: 0; width: 100%; flex-shrink: 0; }
+    body.led .spot-top {
+      min-height: 0;
+      width: 100%;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      background: var(--status-band, #0b1a3a);
+      border-bottom: 1px solid var(--status-band-edge, #2a4a78);
+      padding: var(--status-pad-y, 4px) var(--spot-pad, 6px);
+    }
     body.led .badge {
       font-family: "Press Start 2P", "Silkscreen", monospace;
       font-size: 16px;
@@ -1556,12 +1567,12 @@
         font-size: 16px;
       }
       body.led .spot {
-        padding: 6px 8px 4px;
-        gap: 8px;
+        padding: 0 0 4px;
+        gap: 0;
       }
       body.led .spot-top {
-        flex-wrap: wrap;
-        gap: 4px 8px;
+        flex-wrap: nowrap;
+        gap: 0;
         min-height: 0;
         order: 0;
       }
@@ -1706,8 +1717,8 @@
       }
       body.led .led-ticker { height: var(--ticker-h); }
       body.led .led-ticker-copy { font-size: 16px; }
-      body.led .spot { padding: 2px 8px 2px; gap: 2px; }
-      body.led .spot-top { min-height: 0; gap: 6px; }
+      body.led .spot { padding: 0 0 2px; gap: 0; }
+      body.led .spot-top { min-height: 0; gap: 0; }
       body.led .badge { font-size: 8px; }
       body.led .spot-clock { font-size: 16px; }
       body.led .spot-situation,
@@ -1890,6 +1901,8 @@
       align-items: stretch;
       gap: clamp(16px, 3.5vw, 72px);
       min-height: 0;
+      padding: var(--spot-gap, 6px) var(--spot-pad, 6px) 0;
+      box-sizing: border-box;
     }
     body.led .spot-team {
       display: flex;
@@ -2774,7 +2787,9 @@
       root.style.setProperty("--app-w", px(w));
       root.style.setProperty("--app-h", px(h));
       root.style.setProperty("--ticker-h", px(tickerH));
+      const statusPadY = clampNum(Math.round(statusH * 0.1), h < 500 ? 2 : 3, 10);
       root.style.setProperty("--status-h", px(statusH));
+      root.style.setProperty("--status-pad-y", px(statusPadY));
       root.style.setProperty("--logo-size", px(logo));
       root.style.setProperty("--pad", px(pad));
       root.style.setProperty("--spot-pad", px(spotPad));
