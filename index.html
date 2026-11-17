@@ -2383,6 +2383,78 @@
       cursor: pointer;
     }
     .settings-hint { color: #777; font-size: 15px; margin: 4px 0 0; }
+    .message-card { grid-column: 1 / -1; }
+    .msg-fields { display: flex; flex-direction: column; gap: 10px; }
+    .msg-fields label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 16px;
+      color: #ddd;
+    }
+    .msg-fields .filt-label { margin: 0; }
+    #msg-text {
+      width: 100%;
+      min-height: 88px;
+      font-size: 16px;
+      padding: 8px 10px;
+      background: #111;
+      border: 1px solid #333;
+      color: #fff;
+      box-sizing: border-box;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .msg-colors {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 12px 18px;
+    }
+    .msg-colors label {
+      flex-direction: row;
+      align-items: center;
+      gap: 8px;
+      min-height: 44px;
+    }
+    .msg-colors input[type="color"] {
+      width: 48px;
+      height: 36px;
+      padding: 0;
+      border: 1px solid #444;
+      background: #111;
+      cursor: pointer;
+    }
+    #msg-reset {
+      min-height: 44px;
+      padding: 8px 14px;
+      font-family: "Press Start 2P", monospace;
+      font-size: 8px;
+      letter-spacing: 0.08em;
+      color: #ffb000;
+      background: #111;
+      border: 1px solid #ffb000;
+      cursor: pointer;
+    }
+    body.led .msg-screen {
+      flex: 1 1 0;
+      min-height: 0;
+      min-width: 0;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      background: var(--msg-bg, #0b1a3a);
+    }
+    body.led .msg-led-cv {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    body.led .spotlight-shell:has(.msg-screen) > .led-grid { opacity: 0; }
     body.week-hidden .week-label,
     body.week-hidden #week-select { display: none; }
     .spot-sport-tag { display: none; }
@@ -2591,6 +2663,10 @@
     const TICKER_BASE_PPS = 10; /* old default: 10 LED pitches / second */
     const DEFAULT_TICKER_X = 2; /* new default: double the old speed */
     const PREFS_KEY = "cfb-scoreboard-prefs";
+    const MSG_BG_DEFAULT = "#0b1a3a";
+    const MSG_FG_DEFAULT = "#ffb000";
+    const MESSAGE_SLIDE_ID = "msg:custom";
+    const MSG_TEXT_MAX = 1000;
     const ALERT_MS = 5500;
     const TD_PAT_WINDOW_MS = 90000;
     const demoMode = new URLSearchParams(location.search).has("demo");
@@ -2652,6 +2728,34 @@
       return out;
     }
 
+    function normalizeHexColor(v, fallback) {
+      const s = String(v || "").trim();
+      const m6 = s.match(/^#?([0-9a-f]{6})$/i);
+      if (m6) return "#" + m6[1].toLowerCase();
+      const m3 = s.match(/^#?([0-9a-f]{3})$/i);
+      if (m3) return "#" + m3[1].split("").map((c) => c + c).join("").toLowerCase();
+      return fallback;
+    }
+    function normalizeMessagePref(raw) {
+      const s = (raw && typeof raw === "object") ? raw : {};
+      const text = String(s.text != null ? s.text : "").slice(0, MSG_TEXT_MAX);
+      return {
+        enabled: !!s.enabled,
+        text: text,
+        bg: normalizeHexColor(s.bg, MSG_BG_DEFAULT),
+        fg: normalizeHexColor(s.fg, MSG_FG_DEFAULT),
+      };
+    }
+    function mixHex(a, b, t) {
+      const pa = parseInt(String(a).slice(1), 16);
+      const pb = parseInt(String(b).slice(1), 16);
+      if (!Number.isFinite(pa) || !Number.isFinite(pb)) return a;
+      const ch = (p, sh) => (p >> sh) & 255;
+      const m = (sh) => Math.round(ch(pa, sh) * (1 - t) + ch(pb, sh) * t);
+      const hex = (n) => n.toString(16).padStart(2, "0");
+      return "#" + hex(m(16)) + hex(m(8)) + hex(m(0));
+    }
+
     const state = {
       filter: (savedPrefs.filter && SPORTS[savedPrefs.filter]) ? savedPrefs.filter : "all",
       view: savedPrefs.view === "grid" ? "grid" : "rotate",
@@ -2686,6 +2790,7 @@
       sports: normalizeSportsPrefs(savedPrefs.sports),
       catalog: { cfb: { conferences: [], teams: [] }, cbb: { conferences: [], teams: [] }, nfl: { teams: [] }, mlb: { teams: [] } },
       sportErrors: {},
+      message: normalizeMessagePref(savedPrefs.message),
     };
 
     function loadPrefs() {
@@ -2702,6 +2807,7 @@
           soundOn: state.soundOn,
           filter: state.filter,
           sports: state.sports,
+          message: state.message,
         }));
       } catch {}
     }
@@ -3878,7 +3984,11 @@
       "$": [0x18,0x3C,0x7E,0xDB,0xD8,0x7C,0x3E,0x1B,0xDB,0x7E,0x3C,0x18],
       "•": [0,0,0,0x18,0x3C,0x7E,0x7E,0x3C,0x18,0,0,0],
       "(": [0x0C,0x18,0x30,0x30,0x60,0x60,0x60,0x60,0x30,0x30,0x18,0x0C],
-      ")": [0x30,0x18,0x0C,0x0C,0x06,0x06,0x06,0x06,0x0C,0x0C,0x18,0x30]
+      ")": [0x30,0x18,0x0C,0x0C,0x06,0x06,0x06,0x06,0x0C,0x0C,0x18,0x30],
+      ";": [0,0,0x18,0x3C,0x3C,0x18,0,0,0x18,0x3C,0x18,0x30],
+      "\"": [0x66,0x66,0x66,0xCC,0,0,0,0,0,0,0,0],
+      "@": [0x3C,0x66,0xDB,0xDB,0xDB,0xDB,0xDE,0xDC,0xC0,0x62,0x3C,0],
+      "_": [0,0,0,0,0,0,0,0,0,0,0xFF,0xFF]
     };
 
     function ledDpr() {
@@ -3891,6 +4001,11 @@
       if (LED_FONT[u]) return LED_FONT[u];
       if (u === "—" || u === "–") return LED_FONT["-"];
       if (u === "·") return LED_FONT["•"];
+      if (u === "“" || u === "”" || u === "„" || u === "″") return LED_FONT['"'] || LED_FONT["'"];
+      if (u === "‘" || u === "’" || u === "`") return LED_FONT["'"];
+      if (u === "[" || u === "{") return LED_FONT["("];
+      if (u === "]" || u === "}") return LED_FONT[")"];
+      if (u === "\\") return LED_FONT["/"];
       return LED_FONT[" "];
     }
 
@@ -4196,6 +4311,10 @@
 
     function paintLedTree(root) {
       const scope = root || document;
+      const msgRoot = (scope.querySelector && scope.querySelector(".msg-screen"))
+        || (scope.classList && scope.classList.contains("msg-screen") ? scope : null)
+        || (document.querySelector && document.querySelector(".msg-screen"));
+      if (msgRoot && document.contains(msgRoot)) layoutAndPaintMessage(msgRoot);
       const grouped = new Set();
       const spots = scope.matches && scope.matches(".spot") ? [scope] : [...scope.querySelectorAll(".spot")];
       spots.forEach((spot) => {
@@ -4591,10 +4710,29 @@
       }
     }
 
-    function resolveIndex(games) {
-      if (!games.length) return -1;
+    function messageSlideEnabled() {
+      return !!(state.message && state.message.enabled && String(state.message.text || "").trim());
+    }
+    function messageSlideItem() {
+      return { _kind: "message", id: MESSAGE_SLIDE_ID };
+    }
+    function isMessageSlide(item) {
+      return !!(item && (item._kind === "message" || item === MESSAGE_SLIDE_ID || item.id === MESSAGE_SLIDE_ID));
+    }
+    function rotateItemId(item) {
+      if (isMessageSlide(item)) return MESSAGE_SLIDE_ID;
+      return gameId(item);
+    }
+    function rotateItems() {
+      const games = filteredGames();
+      if (messageSlideEnabled()) return games.concat(messageSlideItem());
+      return games;
+    }
+
+    function resolveIndex(items) {
+      if (!items.length) return -1;
       if (state.currentGameId) {
-        const i = games.findIndex((g) => gameId(g) === String(state.currentGameId));
+        const i = items.findIndex((it) => rotateItemId(it) === String(state.currentGameId));
         if (i >= 0) return i;
       }
       return 0;
@@ -4611,7 +4749,7 @@
     function restartProgress() {
       progressBar.classList.remove("run");
       void progressBar.offsetWidth;
-      if (state.view === "rotate" && filteredGames().length) {
+      if (state.view === "rotate" && rotateItems().length) {
         document.documentElement.style.setProperty("--dwell", state.dwellMs / 1000 + "s");
         progressBar.classList.add("run");
       }
@@ -4632,8 +4770,8 @@
         progressBar.classList.remove("run");
         return;
       }
-      const games = filteredGames();
-      if (!games.length) {
+      const items = rotateItems();
+      if (!items.length) {
         progressBar.classList.remove("run");
         return;
       }
@@ -4672,6 +4810,189 @@
       }
     }
 
+    function ledWrapLines(text, maxChars) {
+      maxChars = Math.max(1, maxChars | 0);
+      const raw = String(text || "").replace(/\r\n/g, "\n").replace(/\t/g, " ");
+      const out = [];
+      raw.split("\n").forEach((para) => {
+        if (para === "") { out.push(""); return; }
+        const words = para.split(/ +/);
+        let cur = "";
+        const flush = () => { if (cur !== "") { out.push(cur); cur = ""; } };
+        words.forEach((w) => {
+          if (w.length > maxChars) {
+            flush();
+            for (let k = 0; k < w.length; k += maxChars) out.push(w.slice(k, k + maxChars));
+            return;
+          }
+          const next = cur ? cur + " " + w : w;
+          if (next.length > maxChars) { flush(); cur = w; }
+          else cur = next;
+        });
+        flush();
+      });
+      return out.length ? out : [""];
+    }
+
+    function fitMessageText(text, cssW, cssH, dpr) {
+      const maxDevW = Math.max(1, Math.round(cssW * dpr));
+      const maxDevH = Math.max(1, Math.round(cssH * dpr));
+      const minP = LED_MIN_PITCH;
+      const preferred = Math.max(minP, fitLedPitch(Math.max(8, cssH * 0.42), dpr, LED_ROWS));
+      const longestWord = Math.max(1, ...String(text).split(/\s+/).map((w) => w.length));
+      const attempt = (p, maxChars) => {
+        const mc = maxChars || Math.max(1, Math.floor(maxDevW / (LED_ADV * p)));
+        const lines = ledWrapLines(text, mc);
+        const rowSpan = lines.length * LED_ROWS + Math.max(0, lines.length - 1);
+        const usedH = rowSpan * p;
+        const maxLineW = Math.max(0, ...lines.map((ln) => measureLedText(ln, p).w));
+        const hardBreaks = !maxChars && longestWord > mc;
+        return { lines: lines, pitch: p, rowSpan: rowSpan, usedH: usedH, maxLineW: maxLineW, fitsH: usedH <= maxDevH, fitsW: maxLineW <= maxDevW, hardBreaks: hardBreaks };
+      };
+      let pitch = preferred;
+      let best = attempt(pitch);
+      while (pitch > minP && (!best.fitsH || !best.fitsW || best.hardBreaks)) {
+        pitch -= 1;
+        best = attempt(pitch);
+      }
+      if (best.fitsH && best.fitsW) {
+        return { lines: best.lines, pitch: best.pitch, rowSpan: best.rowSpan, contentW: best.maxLineW, gap: 0, scroll: false };
+      }
+      const p = Math.max(minP, Math.min(preferred, Math.floor(maxDevH / LED_ROWS)));
+      const maxLines = Math.max(1, Math.floor((maxDevH + p) / ((LED_ROWS + 1) * p)));
+      const joined = String(text).replace(/\s+/g, " ").trim();
+      const mc = Math.max(8, Math.ceil((joined.length || 1) / maxLines));
+      best = attempt(p, mc);
+      if (best.lines.length > maxLines) best = attempt(p, Math.max(mc, Math.ceil(((joined.length || 1) + maxLines) / maxLines)));
+      const gap = Math.max(Math.round(24 * p), Math.round(maxDevW * 0.35));
+      return { lines: best.lines, pitch: best.pitch, rowSpan: best.rowSpan, contentW: best.maxLineW, gap: gap, scroll: true };
+    }
+
+    const msgAnim = { raf: 0, x: 0, last: 0, layout: null, cv: null, patKey: "", pat: null };
+
+    function stopMessageScroll() {
+      if (msgAnim.raf) cancelAnimationFrame(msgAnim.raf);
+      msgAnim.raf = 0;
+      msgAnim.cv = null;
+      msgAnim.last = 0;
+    }
+
+    function ledUnlitPattern(pitch, color) {
+      const key = pitch + ":" + color;
+      if (msgAnim.pat && msgAnim.patKey === key) return msgAnim.pat;
+      const tile = document.createElement("canvas");
+      tile.width = Math.max(1, pitch);
+      tile.height = Math.max(1, pitch);
+      const tctx = tile.getContext("2d");
+      drawLedDot(tctx, pitch / 2, pitch / 2, pitch, color);
+      msgAnim.pat = tctx.createPattern(tile, "repeat");
+      msgAnim.patKey = key;
+      return msgAnim.pat;
+    }
+
+    function paintMessageFrame(cv, layout, offsetX) {
+      const dpr = ledDpr();
+      const cssW = cv.clientWidth || (cv.parentElement && cv.parentElement.clientWidth) || 300;
+      const cssH = cv.clientHeight || (cv.parentElement && cv.parentElement.clientHeight) || 200;
+      const sized = sizeLedCanvas(cv, cssW, cssH, dpr, false);
+      const w = sized.w, h = sized.h;
+      const ctx = cv.getContext("2d");
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      const bg = state.message.bg;
+      const fg = state.message.fg;
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+      const pitch = layout.pitch;
+      const unlit = mixHex(bg, fg, 0.16);
+      ctx.fillStyle = ledUnlitPattern(pitch, unlit);
+      ctx.fillRect(0, 0, w, h);
+      const usedH = layout.rowSpan * pitch;
+      let y = Math.round((h - usedH) / 2 / pitch) * pitch;
+      const drawBlock = (ox) => {
+        let yy = y;
+        for (const ln of layout.lines) {
+          const lineW = measureLedText(ln, pitch).w;
+          const x = layout.scroll ? ox : Math.round(Math.max(0, (w - lineW) / 2) / pitch) * pitch;
+          drawLedText(ctx, ln, x, yy, pitch, fg);
+          yy += (LED_ROWS + 1) * pitch;
+        }
+      };
+      if (layout.scroll) {
+        const x0 = Math.round(-offsetX);
+        drawBlock(x0);
+        drawBlock(x0 + layout.contentW + layout.gap);
+      } else {
+        drawBlock(0);
+      }
+    }
+
+    function startMessageScroll(cv, layout) {
+      stopMessageScroll();
+      msgAnim.cv = cv;
+      msgAnim.layout = layout;
+      msgAnim.x = 0;
+      msgAnim.last = 0;
+      if (!layout.scroll) {
+        paintMessageFrame(cv, layout, 0);
+        return;
+      }
+      const loop = (ts) => {
+        if (!msgAnim.cv || !msgAnim.cv.isConnected) { stopMessageScroll(); return; }
+        if (!msgAnim.last) msgAnim.last = ts;
+        const dt = Math.min(0.05, (ts - msgAnim.last) / 1000);
+        msgAnim.last = ts;
+        const speed = layout.pitch * 8;
+        const total = layout.contentW + layout.gap;
+        if (total > 0) msgAnim.x = (msgAnim.x + speed * dt) % total;
+        paintMessageFrame(msgAnim.cv, layout, msgAnim.x);
+        msgAnim.raf = requestAnimationFrame(loop);
+      };
+      paintMessageFrame(cv, layout, 0);
+      msgAnim.raf = requestAnimationFrame(loop);
+    }
+
+    function layoutAndPaintMessage(root) {
+      const cv = root.querySelector ? root.querySelector(".msg-led-cv") : null;
+      if (!cv) return;
+      const text = String(state.message.text || "").trim();
+      if (!text) return;
+      const cssW = cv.clientWidth || root.clientWidth || 300;
+      const cssH = cv.clientHeight || root.clientHeight || 200;
+      if (cssW < 8 || cssH < 8) return;
+      const layout = fitMessageText(text, cssW, cssH, ledDpr());
+      startMessageScroll(cv, layout);
+    }
+
+    function messageScreenHtml() {
+      const text = String(state.message.text || "").trim();
+      return '<article class="msg-screen" data-id="' + MESSAGE_SLIDE_ID + '" style="--msg-bg:' + escapeHtml(state.message.bg) + ';background:' + escapeHtml(state.message.bg) + '">' +
+        '<canvas class="msg-led-cv" aria-hidden="true"></canvas>' +
+        '<span class="vh">' + escapeHtml(text) + "</span></article>";
+    }
+
+    function paintMessageSlide(animDir) {
+      const existing = stageEl.querySelector(".msg-screen");
+      if (existing && !animDir) {
+        layoutAndPaintMessage(existing);
+        return;
+      }
+      stopMessageScroll();
+      stageEl.classList.remove("anim-next", "anim-prev");
+      if (animDir === 1) stageEl.classList.add("anim-next");
+      if (animDir === -1) stageEl.classList.add("anim-prev");
+      stageEl.innerHTML = messageScreenHtml();
+      paintLedTreeAfterLayout(stageEl);
+      if (animDir) {
+        const onEnd = () => {
+          stageEl.classList.remove("anim-next", "anim-prev");
+          const el = stageEl.querySelector(".msg-screen");
+          if (el) { el.style.transform = "none"; layoutAndPaintMessage(el); }
+        };
+        const node = stageEl.querySelector(".msg-screen");
+        if (node) node.addEventListener("animationend", onEnd, { once: true });
+      }
+    }
+
     function noGamesBoardHtml() {
       const ids = state.filter && state.filter !== "all" ? [state.filter] : enabledSportIds();
       const lines = (ids.length ? ids : SPORT_ORDER).map((id) => {
@@ -4691,35 +5012,44 @@
     }
 
     function showResolvedSpotlight(animDir) {
-      const games = filteredGames();
-      if (!games.length) {
+      const items = rotateItems();
+      if (!items.length) {
+        stopMessageScroll();
         state.currentGameId = null;
         stageEl.classList.remove("anim-next", "anim-prev");
         stageEl.innerHTML =
           noGamesBoardHtml();
         paintLedTreeAfterLayout(stageEl);
-        updateRotateChrome(games, -1);
+        updateRotateChrome(items, -1);
         progressBar.classList.remove("run");
         stopRotate();
         return;
       }
-      const index = resolveIndex(games);
-      state.currentGameId = gameId(games[index]);
-      const currentEl = stageEl.querySelector(".spot");
-      const sameGame = currentEl && currentEl.getAttribute("data-id") === state.currentGameId;
-      paintSpotlight(games[index], sameGame ? 0 : animDir);
-      updateRotateChrome(games, index);
+      const index = resolveIndex(items);
+      state.currentGameId = rotateItemId(items[index]);
+      if (isMessageSlide(items[index])) {
+        const currentEl = stageEl.querySelector(".msg-screen");
+        const same = currentEl && currentEl.getAttribute("data-id") === MESSAGE_SLIDE_ID;
+        paintMessageSlide(same ? 0 : animDir);
+      } else {
+        stopMessageScroll();
+        const currentEl = stageEl.querySelector(".spot");
+        const sameGame = currentEl && currentEl.getAttribute("data-id") === state.currentGameId;
+        paintSpotlight(items[index], sameGame ? 0 : animDir);
+      }
+      updateRotateChrome(items, index);
     }
 
     function stepRotate(dir) {
       if (state.alertActive) return;
-      const games = filteredGames();
-      if (!games.length) return;
-      let i = resolveIndex(games);
-      i = (i + dir + games.length) % games.length;
-      state.currentGameId = gameId(games[i]);
-      paintSpotlight(games[i], dir);
-      updateRotateChrome(games, i);
+      const items = rotateItems();
+      if (!items.length) return;
+      let i = resolveIndex(items);
+      i = (i + dir + items.length) % items.length;
+      state.currentGameId = rotateItemId(items[i]);
+      if (isMessageSlide(items[i])) paintMessageSlide(dir);
+      else { stopMessageScroll(); paintSpotlight(items[i], dir); }
+      updateRotateChrome(items, i);
       if (!state.paused) scheduleRotate();
       else {
         stopRotate();
@@ -4852,7 +5182,7 @@
     function render() {
       updateCounts();
       updateTicker();
-      if (state.error && !state.events.length) {
+      if (state.error && !state.events.length && !messageSlideEnabled()) {
         stopRotate();
         const errHtml =
           '<div class="msg error"><h2>Couldn’t load scores</h2><p>' +
@@ -5268,8 +5598,79 @@
 
     function renderSettings() {
       if (!settingsBody) return;
-      settingsBody.innerHTML = SPORT_ORDER.map((id) => sportCardHtml(id)).join("");
+      settingsBody.innerHTML = SPORT_ORDER.map((id) => sportCardHtml(id)).join("") + messageCardHtml();
       bindSettings();
+      bindMessageSettings();
+    }
+
+    function messageCardHtml() {
+      const m = state.message;
+      const on = m.enabled ? " is-on" : "";
+      return '<section class="sport-card message-card' + on + '">' +
+        '<div class="sport-card-head"><h3>CUSTOM MESSAGE</h3>' +
+        '<label class="led-toggle"><input type="checkbox" id="msg-enabled"' + (m.enabled ? " checked" : "") + '><span></span></label></div>' +
+        '<div class="msg-fields">' +
+          '<label><span class="filt-label">MESSAGE</span>' +
+            '<textarea id="msg-text" rows="3" maxlength="' + MSG_TEXT_MAX + '" placeholder="Shown as its own LED slide in the rotation">' + escapeHtml(m.text) + "</textarea></label>" +
+          '<div class="msg-colors">' +
+            '<label>Background <input type="color" id="msg-bg" value="' + escapeHtml(m.bg) + '" aria-label="Message background color"></label>' +
+            '<label>Text <input type="color" id="msg-fg" value="' + escapeHtml(m.fg) + '" aria-label="Message text color"></label>' +
+            '<button type="button" id="msg-reset">Reset colors</button>' +
+          "</div>" +
+          '<p class="settings-hint">When on, the message joins the spotlight rotation for the same dwell as a game. It still appears if no games are listed.</p>' +
+        "</div></section>";
+    }
+
+    function applyMessagePrefs() {
+      savePrefs();
+      if (state.view !== "rotate") return;
+      if (!messageSlideEnabled() && state.currentGameId === MESSAGE_SLIDE_ID) state.currentGameId = null;
+      showResolvedSpotlight(0);
+      if (!state.paused) {
+        const items = rotateItems();
+        if (items.length) {
+          if (!state.rotateTimer) scheduleRotate();
+        } else {
+          stopRotate();
+          progressBar.classList.remove("run");
+        }
+      }
+    }
+
+    function bindMessageSettings() {
+      const en = document.getElementById("msg-enabled");
+      const text = document.getElementById("msg-text");
+      const bg = document.getElementById("msg-bg");
+      const fg = document.getElementById("msg-fg");
+      const reset = document.getElementById("msg-reset");
+      if (!en || !text || !bg || !fg || !reset) return;
+      en.addEventListener("change", () => {
+        state.message.enabled = en.checked;
+        const card = settingsBody.querySelector(".message-card");
+        if (card) card.classList.toggle("is-on", en.checked);
+        applyMessagePrefs();
+      });
+      let msgTypeTimer = null;
+      text.addEventListener("input", () => {
+        state.message.text = String(text.value || "").slice(0, MSG_TEXT_MAX);
+        savePrefs();
+        if (msgTypeTimer) clearTimeout(msgTypeTimer);
+        msgTypeTimer = setTimeout(() => applyMessagePrefs(), 200);
+      });
+      const onColor = () => {
+        state.message.bg = normalizeHexColor(bg.value, MSG_BG_DEFAULT);
+        state.message.fg = normalizeHexColor(fg.value, MSG_FG_DEFAULT);
+        applyMessagePrefs();
+      };
+      bg.addEventListener("input", onColor);
+      fg.addEventListener("input", onColor);
+      reset.addEventListener("click", () => {
+        state.message.bg = MSG_BG_DEFAULT;
+        state.message.fg = MSG_FG_DEFAULT;
+        bg.value = MSG_BG_DEFAULT;
+        fg.value = MSG_FG_DEFAULT;
+        applyMessagePrefs();
+      });
     }
 
     function sportCardHtml(id) {
