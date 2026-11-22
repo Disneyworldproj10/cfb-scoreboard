@@ -3,198 +3,156 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Race Ticker 128x64</title>
+<title>Race Ticker</title>
 <style>
-  html,body{margin:0;height:100%;background:#000;overflow:hidden}
-  body{display:flex;align-items:center;justify-content:center}
-  canvas{display:block}
+  :root{
+    --bg:#0d1117; --panel:#161b22; --line:#30363d; --text:#e6edf3; --muted:#8b949e;
+    --red:#e5484d; --green:#3fb950; --gold:#f5c542; --blue:#58a6ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden;
+    font-family:"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif}
+  body{display:grid;grid-template-rows:auto 1fr auto;gap:1.2vh;padding:1.5vh 1.5vw}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:1.2vh;box-shadow:0 .6vh 2vh rgba(0,0,0,.35);overflow:hidden;position:relative}
+
+  /* Top bar */
+  #top{display:flex;align-items:center;justify-content:space-between;padding:1.6vh 2.5vw;font-size:4.6vh;font-weight:700}
+  #top .race{color:var(--text)} #top .race span{color:var(--red)}
+  #top .live{display:flex;align-items:center;gap:.8vw;font-size:2.6vh;font-weight:700;color:var(--red);letter-spacing:.2em}
+  #top .live i{width:1.6vh;height:1.6vh;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite}
+  #top .start{font-weight:600;color:var(--muted)} #top .start b{color:var(--text)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(229,72,77,.7)}70%{box-shadow:0 0 0 1.4vh rgba(229,72,77,0)}100%{box-shadow:0 0 0 0 rgba(229,72,77,0)}}
+
+  /* Middle crawl */
+  #middle{display:flex;align-items:center}
+  #middle::before,#middle::after{content:"";position:absolute;top:0;bottom:0;width:6vw;z-index:2;pointer-events:none}
+  #middle::before{left:0;background:linear-gradient(90deg,var(--panel),transparent)}
+  #middle::after{right:0;background:linear-gradient(-90deg,var(--panel),transparent)}
+  #crawl{display:flex;white-space:nowrap;will-change:transform}
+  .copy{display:flex}
+  .item{display:flex;align-items:center;gap:1.4vw;padding:0 3vw;font-size:11vh;font-weight:700;border-right:1px solid var(--line)}
+  .pos{display:inline-flex;align-items:center;justify-content:center;min-width:13vh;height:13vh;border-radius:1.4vh;background:#21262d;color:var(--muted);font-size:8vh}
+  .item.p1 .pos{background:var(--gold);color:#1a1300}
+  .num{color:var(--blue);font-variant-numeric:tabular-nums}
+  .name{color:var(--text)} .item.p1 .name{color:var(--gold)}
+
+  /* Slot car zoom */
+  #car{position:absolute;top:50%;left:0;height:22vh;transform:translate(110vw,-50%);z-index:3;pointer-events:none;
+    filter:drop-shadow(0 1vh 1.2vh rgba(0,0,0,.6))}
+  #car.go{animation:zoom .7s cubic-bezier(.3,0,.7,1) forwards}
+  @keyframes zoom{from{transform:translate(110vw,-50%)}to{transform:translate(-60vh,-50%)}}
+
+  /* Bottom: current leader */
+  #bottom{display:flex;align-items:center;justify-content:center;gap:2vw;padding:1.8vh 2vw;font-size:5vh;font-weight:700}
+  #bottom .tag{font-size:2.6vh;letter-spacing:.2em;color:var(--muted)}
+  #bottom .p{background:var(--gold);color:#1a1300;border-radius:1vh;padding:.3vh 1.2vw}
+  #bottom .who .n{color:var(--blue)}
+  #bottom.flash{animation:flash .9s}
+  @keyframes flash{0%,40%,80%{background:#2d2a12}20%,60%,100%{background:var(--panel)}}
+
+  /* Winner */
+  #winner{position:fixed;inset:0;display:none;z-index:10;padding:5vh;
+    background:repeating-conic-gradient(#fff 0 25%,#111 0 50%) 0 0/8vh 8vh;animation:wave 1s linear infinite}
+  #winner.show{display:block}
+  @keyframes wave{to{background-position:8vh 0}}
+  #winner .inner{height:100%;border-radius:1.6vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4vh}
+  #winner h1{font-size:20vh;font-weight:900;letter-spacing:.08em;color:var(--gold);text-shadow:0 0 4vh rgba(245,197,66,.35);animation:pop 1s ease-in-out infinite alternate}
+  #winner .who{font-size:9vh;font-weight:700} #winner .who .n{color:var(--blue);margin-right:2vw}
+  @keyframes pop{from{transform:scale(1)}to{transform:scale(1.06)}}
 </style>
 </head>
 <body>
-<canvas id="led"></canvas>
+  <header id="top" class="card">
+    <div class="race">RACE <span id="raceNo"></span></div>
+    <div class="live"><i></i>LIVE</div>
+    <div class="start">START <b id="startTime"></b></div>
+  </header>
+
+  <main id="middle" class="card">
+    <div id="crawl"><div class="copy" id="c1"></div><div class="copy" id="c2"></div></div>
+    <svg id="car" viewBox="0 0 220 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <g stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7">
+        <line x1="160" y1="22" x2="215" y2="22"/><line x1="172" y1="38" x2="220" y2="38"/><line x1="165" y1="54" x2="205" y2="54"/>
+      </g>
+      <path d="M8 52 Q10 40 30 36 L58 30 Q72 14 98 14 L118 14 Q132 16 140 30 L150 34 Q158 38 156 52 Z" fill="#e5484d"/>
+      <path d="M66 31 Q78 19 98 19 L112 19 Q122 20 128 31 Z" fill="#9bd4ff"/>
+      <rect x="10" y="42" width="144" height="5" fill="#f5c542"/>
+      <circle cx="40" cy="56" r="12" fill="#222"/><circle cx="40" cy="56" r="5" fill="#bbb"/>
+      <circle cx="126" cy="56" r="12" fill="#222"/><circle cx="126" cy="56" r="5" fill="#bbb"/>
+      <text x="88" y="40" font-family="Arial" font-weight="900" font-size="12" fill="#fff" text-anchor="middle">12</text>
+    </svg>
+  </main>
+
+  <footer id="bottom" class="card">
+    <span class="tag">RACE LEADER</span><span class="p">P1</span><span class="who" id="leader"></span>
+  </footer>
+
+  <div id="winner"><div class="inner"><h1>WINNER</h1><div class="who" id="winWho"></div></div></div>
+
 <script>
-// ===== Panel config =====
-const W = 128, H = 64;         // physical LED panel resolution
-const SHOW_DOTS = true;        // round LED look when scaled up; set false for square pixels
-
 // ===== MOCK DATA (swap in live data later) =====
-const race = { number: 7, start: "7:30PM" };
+const race = { number: 7, start: "7:30 PM" };
 const ROSTER = [
-  { car: 12, name: "LANGA" },   { car: 7,  name: "DELGADO" },
-  { car: 44, name: "CHEN" },    { car: 3,  name: "WALKER" },
-  { car: 88, name: "PATEL" },   { car: 21, name: "OBRIEN" },
-  { car: 55, name: "NAKAMURA" },{ car: 9,  name: "MORALES" },
-  { car: 31, name: "HUFFMAN" }, { car: 66, name: "KOWALSKI" },
-];
-let racers = [];
-function resetRace(){ racers = ROSTER.map((r,i)=>({ ...r, laps: 42 - Math.floor(i*0.8), dist: Math.random() })); }
-resetRace();
-
-// Demo loop timing
-const RACE_MS = 60000;     // race runs 1 minute
-const WINNER_MS = 10000;   // winner screen shows 10 seconds
-let cycleStart = performance.now(), winner = null;
-
-const topOfDay = [
-  { lbl: "1ST", who: "#12 LANGA" },
-  { lbl: "2ND", who: "#88 PATEL" },
-  { lbl: "3RD", who: "#3 WALKER" },
-  { lbl: "FAST", who: "#44 CHEN" }, // fastest lap
+  { car: 12, name: "Jay Langa" },     { car: 7,  name: "Maria Delgado" },
+  { car: 44, name: "Ryan Chen" },     { car: 3,  name: "Tom Walker" },
+  { car: 88, name: "Sanjay Patel" },  { car: 21, name: "Kevin O'Brien" },
+  { car: 55, name: "Dai Nakamura" },  { car: 9,  name: "Luis Morales" },
+  { car: 31, name: "Bob Huffman" },   { car: 66, name: "Anna Kowalski" },
 ];
 
-// ===== Colors =====
-const C = { red:"#ff2020", amber:"#ffa800", green:"#30ff30", cyan:"#00d8ff", white:"#ffffff", yellow:"#fff200", dim:"#202020" };
+// ===== Timing =====
+const RACE_MS = 60000, WINNER_MS = 10000;   // 1 minute race, 10 second winner screen
+const CRAWL_SPEED = 0.09;                   // crawl speed, in screen widths per second
 
-// ===== 3x5 pixel font =====
-const F = {
- "A":["010","101","111","101","101"],"B":["110","101","110","101","110"],"C":["011","100","100","100","011"],
- "D":["110","101","101","101","110"],"E":["111","100","110","100","111"],"F":["111","100","110","100","100"],
- "G":["011","100","101","101","011"],"H":["101","101","111","101","101"],"I":["111","010","010","010","111"],
- "J":["001","001","001","101","010"],"K":["101","101","110","101","101"],"L":["100","100","100","100","111"],
- "M":["101","111","111","101","101"],"N":["110","101","101","101","101"],"O":["010","101","101","101","010"],
- "P":["110","101","110","100","100"],"Q":["010","101","101","110","011"],"R":["110","101","110","101","101"],
- "S":["011","100","010","001","110"],"T":["111","010","010","010","010"],"U":["101","101","101","101","111"],
- "V":["101","101","101","101","010"],"W":["101","101","111","111","101"],"X":["101","101","010","101","101"],
- "Y":["101","101","010","010","010"],"Z":["111","001","010","100","111"],
- "0":["111","101","101","101","111"],"1":["010","110","010","010","111"],"2":["110","001","010","100","111"],
- "3":["110","001","010","001","110"],"4":["101","101","111","001","001"],"5":["111","100","110","001","110"],
- "6":["011","100","111","101","111"],"7":["111","001","010","010","010"],"8":["111","101","111","101","111"],
- "9":["111","101","111","001","110"],":":["000","010","000","010","000"],"#":["01010","11111","01010","11111","01010"],
- ".":["000","000","000","000","010"],"-":["000","000","111","000","000"]," ":["000","000","000","000","000"],
- "+":["000","010","111","010","000"]
-};
+let racers = [], cycleStart = performance.now(), winnerShown = false, lastLeader = null;
+const $ = id => document.getElementById(id);
+$("raceNo").textContent = race.number; $("startTime").textContent = race.start;
 
-// ===== Framebuffer =====
-let fb = [];
-function clear(){ fb = Array.from({length:H},()=>Array(W).fill(null)); }
-function px(x,y,c,clip){ if(x<0||x>=W||y<0||y>=H) return; if(clip && (y<clip[0]||y>clip[1])) return; fb[y][x]=c; }
-function text(str,x,y,c,clip,sc=1){ for(const ch of str.toUpperCase()){ const g=F[ch]||F[" "], gw=g[0].length;
-  if (x > -(gw+1)*sc && x < W) for(let r=0;r<5;r++) for(let k=0;k<gw;k++) if(g[r][k]==="1")
-    for(let a=0;a<sc;a++) for(let b=0;b<sc;b++) px(x+k*sc+b,y+r*sc+a,c,clip);
-  x+=(gw+1)*sc; } return x; }
-// pixel width of a string (glyphs can be different widths, e.g. #)
-function tw(str,sc=1){ let w=0; for(const ch of str.toUpperCase()) w += ((F[ch]||F[" "])[0].length+1)*sc; return w - sc; }
-function hline(y,c){ for(let x=0;x<W;x++) px(x,y,c); }
+function resetRace(){ racers = ROSTER.map((r,i)=>({ ...r, laps: 42 - Math.floor(i*0.8), dist: Math.random() })); renderRacers(); }
+function standings(){ return [...racers].sort((a,b)=>(b.laps+b.dist)-(a.laps+a.dist)); }
 
-// ===== Race simulation =====
-setInterval(()=>{ if (winner) return; racers.forEach(r=>{ r.dist += 0.25+Math.random()*0.12; if(r.dist>=1){r.dist-=1;r.laps++;} });
-  racers.sort((a,b)=>(b.laps+b.dist)-(a.laps+a.dist)); }, 1500);
-
-// ===== Animation state =====
-let scroll = 0, frame = 0, page = 0, pageStart = performance.now();
-const PAGE_MS = 3000, CRAWL_PX_PER_SEC = 48;
-const CAR_MS = 700;                 // how long the slot car takes to cross the panel
-let prevOff = -1, carStart = -1, lastLeader = null, leadChange = -1e9;
-// Slot car sprite, nose pointing left. R=body, W=window, Y=stripe, K=tire, H=hub
-const CAR = [
-  "......RRRRR.......",
-  ".....RWWWWRR......",
-  "..RRRRRRRRRRRRRR..",
-  "RRRRRRRRRRRRRRRRRR",
-  "YYYYYYYYYYYYYYYYYY",
-  "RRKKKRRRRRRRKKKRRR",
-  "..KHK.......KHK...",
-  "..KKK.......KKK...",
-];
-const CAR_C = { R:"#ff2020", W:"#00d8ff", Y:"#fff200", K:"#606060", H:"#c0c0c0" };
-const CS = 2;   // car sprite scale
-function drawCar(x, y){
-  const cw = CAR[0].length*CS, ch_ = CAR.length*CS;
-  // black out the crawl behind the car and its speed trail
-  for (let yy=y-2; yy<y+ch_+2; yy++) for (let xx=x-2; xx<x+cw+32; xx++) px(xx,yy,null);
-  CAR.forEach((row,r)=>{ for(let k=0;k<CAR[0].length;k++){ const ch=row[k]; if(ch===".") continue;
-    for(let a=0;a<CS;a++) for(let b=0;b<CS;b++) px(x+k*CS+b,y+r*CS+a,CAR_C[ch]); } });
-  // speed lines trailing to the right
-  [[2,20],[6,28],[10,16]].forEach(([r,len])=>{ for(let i=0;i<len;i+=3){ const c=i<9?"#ffffff":"#707070"; px(x+cw+2+i,y+r,c); px(x+cw+3+i,y+r,c); px(x+cw+2+i,y+r+1,c); px(x+cw+3+i,y+r+1,c);} });
-}  // crawl speed in LED pixels per second
-
-function drawWinner(now){
-  // checkered-flag border, 2 LEDs thick, marching slowly
-  const shift = Math.floor(now/250) % 2;
-  for (let y=0;y<H;y++) for (let x=0;x<W;x++){
-    if (x<4 || x>=W-4 || y<4 || y>=H-4){
-      const on = ((Math.floor(x/4) + Math.floor(y/4) + shift) % 2) === 0;
-      px(x,y, on ? C.white : "#000000");
-    }
+function renderRacers(){
+  const s = standings();
+  const html = s.map((r,i)=>`<div class="item ${i===0?'p1':''}"><span class="pos">${i+1}</span><span class="num">#${r.car}</span><span class="name">${r.name}</span></div>`).join("");
+  $("c1").innerHTML = html; $("c2").innerHTML = html;
+  const ld = s[0];
+  if (ld.car !== lastLeader){
+    lastLeader = ld.car;
+    $("leader").innerHTML = `<span class="n">#${ld.car}</span> ${ld.name}`;
+    const b = $("bottom"); b.classList.remove("flash"); void b.offsetWidth; b.classList.add("flash");
   }
-  const wc = Math.floor(now/400)%2 ? C.yellow : C.amber;      // WINNER pulses
-  text("WINNER", Math.floor((W - tw("WINNER",3))/2), 11, wc, null, 3);
-  const num = "#"+winner.car, nm = winner.name;
-  const w = tw(num+" "+nm, 2);
-  const nx = text(num, Math.floor((W - w)/2), 38, C.red, null, 2);
-  text(nm, nx+8, 38, C.green, null, 2);
 }
 
-function draw(now){
-  clear(); frame++;
+// Race simulation
+setInterval(()=>{ if (winnerShown) return;
+  racers.forEach(r=>{ r.dist += 0.25+Math.random()*0.12; if(r.dist>=1){ r.dist-=1; r.laps++; } });
+  renderRacers(); }, 1500);
+
+// Crawl + car + winner loop
+let offset = 0, last = performance.now();
+function launchCar(){ const c=$("car"); c.classList.remove("go"); void c.getBoundingClientRect(); c.classList.add("go"); }
+function frame(now){
+  const dt = (now - last)/1000; last = now;
   const el = now - cycleStart;
-  if (el >= RACE_MS + WINNER_MS){                  // loop the demo
-    resetRace(); winner = null; cycleStart = now; prevOff = -1; carStart = -1; page = 0; pageStart = now;
-  } else if (el >= RACE_MS){
-    if (!winner) winner = { ...racers[0] };
-    drawWinner(now); render(); requestAnimationFrame(draw); return;
+
+  if (el >= RACE_MS + WINNER_MS){            // loop the demo
+    $("winner").classList.remove("show"); winnerShown = false;
+    cycleStart = now; offset = 0; lastLeader = null; resetRace();
+  } else if (el >= RACE_MS && !winnerShown){  // race over: show winner
+    winnerShown = true; const w = standings()[0];
+    $("winWho").innerHTML = `<span class="n">#${w.car}</span>${w.name}`;
+    $("winner").classList.add("show");
   }
 
-  // --- Top stationary bar (rows 0-6) ---
-  text("RACE "+race.number, 2, 2, C.red, null, 2);
-  if (Math.floor(now/500)%2) text("LIVE", 56, 4, C.green);          // blinking LIVE
-  const st = race.start; text(st, W - st.length*8, 2, C.amber, null, 2);
-  hline(13, "#402000");
-
-  // --- Positions crawl right-to-left (rows 8-23), double-size font ---
-  const segs = [];
-  racers.forEach((r,i)=>{
-    segs.push([String(i+1), C.red], [" #"+r.car+" ", C.green], [r.name, i===0?C.yellow:C.amber], ["  ", null]);
-  });
-  const total = segs.reduce((n,s)=>n+tw(s[0],3)+3,0);
-  const off = Math.floor(((now - cycleStart)*CRAWL_PX_PER_SEC/1000) % total);
-  if (off < prevOff) carStart = now;          // leaderboard just repeated: launch the car
-  prevOff = off;
-  for (let k=0;k<2;k++){
-    let cx = W - off + k*total;
-    if (cx > W) cx -= 2*total;
-    for (const [str,c] of segs){ cx = c ? text(str,cx,24,c,null,3) : cx + tw(str,3)+3; }
+  if (!winnerShown){
+    const copyW = $("c1").offsetWidth;
+    offset += innerWidth * CRAWL_SPEED * dt;
+    if (copyW && offset >= copyW){ offset -= copyW; launchCar(); }   // leaderboard repeated
+    $("crawl").style.transform = `translateX(${innerWidth - offset}px)`;
   }
-  if (carStart >= 0){
-    const t = (now - carStart) / CAR_MS;
-    if (t <= 1){ const cw = CAR[0].length*CS; drawCar(Math.round(W - t*(W + cw + 34)), 23); }
-    else carStart = -1;
-  }
-  hline(50, "#402000");
-
-  // --- Bottom: current race leader only (flashes when the lead changes) ---
-  const ld = racers[0];
-  if (ld.car !== lastLeader){ lastLeader = ld.car; leadChange = now; }
-  const lAge = now - leadChange, lFlash = lAge < 900 && Math.floor(lAge/150)%2===1;
-  if (!lFlash){
-    const lbl = "P1", who = "#"+ld.car+" "+ld.name;
-    const w = tw(lbl+" "+who, 2);
-    const nx = text(lbl, Math.floor((W - w)/2), 53, C.red, null, 2);
-    text(who, nx+8, 53, C.green, null, 2);
-  }
-
-  render(); requestAnimationFrame(draw);
+  requestAnimationFrame(frame);
 }
-
-// ===== Scale-to-screen renderer =====
-const cv = document.getElementById("led"), ctx = cv.getContext("2d");
-let cell = 1;
-function resize(){
-  cell = Math.max(1, Math.floor(Math.min(innerWidth/W, innerHeight/H)));
-  cv.width = W*cell; cv.height = H*cell;
-  cv.style.width = cv.width+"px"; cv.style.height = cv.height+"px";
-}
-function render(){
-  ctx.fillStyle="#000"; ctx.fillRect(0,0,cv.width,cv.height);
-  const dots = SHOW_DOTS && cell>=4, rad = cell*0.42;
-  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
-    const c = fb[y][x] || (dots ? C.dim : null); if(!c) continue;
-    ctx.fillStyle = c;
-    if (dots){ ctx.beginPath(); ctx.arc(x*cell+cell/2, y*cell+cell/2, rad, 0, Math.PI*2); ctx.fill(); }
-    else ctx.fillRect(x*cell, y*cell, cell, cell);
-  }
-}
-addEventListener("resize", resize); resize(); requestAnimationFrame(draw);
+resetRace(); requestAnimationFrame(frame);
 </script>
 </body>
 </html>
