@@ -30,17 +30,17 @@
   #middle::after{right:0;background:linear-gradient(-90deg,var(--panel),transparent)}
   #crawl{display:flex;white-space:nowrap;will-change:transform}
   .copy{display:flex}
-  .item{display:flex;align-items:center;gap:1.4vw;padding:0 3vw;font-size:11vh;font-weight:700;border-right:1px solid var(--line)}
-  .pos{display:inline-flex;align-items:center;justify-content:center;min-width:13vh;height:13vh;border-radius:1.4vh;background:#21262d;color:var(--muted);font-size:8vh}
+  .item{display:flex;align-items:center;gap:2vw;padding:0 4vw;font-size:20vh;font-weight:700;border-right:1px solid var(--line)}
+  .pos{display:inline-flex;align-items:center;justify-content:center;min-width:22vh;height:22vh;border-radius:2vh;background:#21262d;color:var(--muted);font-size:14vh}
   .item.p1 .pos{background:var(--gold);color:#1a1300}
   .num{color:var(--blue);font-variant-numeric:tabular-nums}
   .name{color:var(--text)} .item.p1 .name{color:var(--gold)}
 
   /* Slot car zoom */
-  #car{position:absolute;top:50%;left:0;height:22vh;transform:translate(110vw,-50%);z-index:3;pointer-events:none;
+  #car{position:absolute;top:50%;left:0;height:30vh;transform:translate(110vw,-50%);z-index:3;pointer-events:none;
     filter:drop-shadow(0 1vh 1.2vh rgba(0,0,0,.6))}
   #car.go{animation:zoom .7s cubic-bezier(.3,0,.7,1) forwards}
-  @keyframes zoom{from{transform:translate(110vw,-50%)}to{transform:translate(-60vh,-50%)}}
+  @keyframes zoom{from{transform:translate(110vw,-50%)}to{transform:translate(-90vh,-50%)}}
 
   /* Bottom: current leader */
   #bottom{display:flex;align-items:center;justify-content:center;gap:2vw;padding:1.8vh 2vw;font-size:5vh;font-weight:700}
