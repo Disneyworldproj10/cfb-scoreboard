@@ -59,7 +59,7 @@ const F = {
  "0":["111","101","101","101","111"],"1":["010","110","010","010","111"],"2":["110","001","010","100","111"],
  "3":["110","001","010","001","110"],"4":["101","101","111","001","001"],"5":["111","100","110","001","110"],
  "6":["011","100","111","101","111"],"7":["111","001","010","010","010"],"8":["111","101","111","101","111"],
- "9":["111","101","111","001","110"],":":["000","010","000","010","000"],"#":["101","111","101","111","101"],
+ "9":["111","101","111","001","110"],":":["000","010","000","010","000"],"#":["01010","11111","01010","11111","01010"],
  ".":["000","000","000","000","010"],"-":["000","000","111","000","000"]," ":["000","000","000","000","000"],
  "+":["000","010","111","010","000"]
 };
@@ -68,10 +68,12 @@ const F = {
 let fb = [];
 function clear(){ fb = Array.from({length:H},()=>Array(W).fill(null)); }
 function px(x,y,c,clip){ if(x<0||x>=W||y<0||y>=H) return; if(clip && (y<clip[0]||y>clip[1])) return; fb[y][x]=c; }
-function text(str,x,y,c,clip,sc=1){ for(const ch of str.toUpperCase()){ const g=F[ch]||F[" "];
-  if (x > -4*sc && x < W) for(let r=0;r<5;r++) for(let k=0;k<3;k++) if(g[r][k]==="1")
+function text(str,x,y,c,clip,sc=1){ for(const ch of str.toUpperCase()){ const g=F[ch]||F[" "], gw=g[0].length;
+  if (x > -(gw+1)*sc && x < W) for(let r=0;r<5;r++) for(let k=0;k<gw;k++) if(g[r][k]==="1")
     for(let a=0;a<sc;a++) for(let b=0;b<sc;b++) px(x+k*sc+b,y+r*sc+a,c,clip);
-  x+=4*sc; } return x; }
+  x+=(gw+1)*sc; } return x; }
+// pixel width of a string (glyphs can be different widths, e.g. #)
+function tw(str,sc=1){ let w=0; for(const ch of str.toUpperCase()) w += ((F[ch]||F[" "])[0].length+1)*sc; return w - sc; }
 function hline(y,c){ for(let x=0;x<W;x++) px(x,y,c); }
 
 // ===== Race simulation =====
@@ -82,7 +84,7 @@ setInterval(()=>{ if (winner) return; racers.forEach(r=>{ r.dist += 0.25+Math.ra
 let scroll = 0, frame = 0, page = 0, pageStart = performance.now();
 const PAGE_MS = 3000, CRAWL_PX_PER_SEC = 48;
 const CAR_MS = 700;                 // how long the slot car takes to cross the panel
-let prevOff = -1, carStart = -1;
+let prevOff = -1, carStart = -1, lastLeader = null, leadChange = -1e9;
 // Slot car sprite, nose pointing left. R=body, W=window, Y=stripe, K=tire, H=hub
 const CAR = [
   "......RRRRR.......",
@@ -116,9 +118,9 @@ function drawWinner(now){
     }
   }
   const wc = Math.floor(now/400)%2 ? C.yellow : C.amber;      // WINNER pulses
-  text("WINNER", Math.floor((W - (6*12-3))/2), 11, wc, null, 3);
+  text("WINNER", Math.floor((W - tw("WINNER",3))/2), 11, wc, null, 3);
   const num = "#"+winner.car, nm = winner.name;
-  const w = (num.length + 1 + nm.length)*8 - 2;
+  const w = tw(num+" "+nm, 2);
   const nx = text(num, Math.floor((W - w)/2), 38, C.red, null, 2);
   text(nm, nx+8, 38, C.green, null, 2);
 }
@@ -144,14 +146,14 @@ function draw(now){
   racers.forEach((r,i)=>{
     segs.push([String(i+1), C.red], [" #"+r.car+" ", C.green], [r.name, i===0?C.yellow:C.amber], ["  ", null]);
   });
-  const charsTotal = segs.reduce((n,s)=>n+s[0].length,0), total = charsTotal*12;
+  const total = segs.reduce((n,s)=>n+tw(s[0],3)+3,0);
   const off = Math.floor(((now - cycleStart)*CRAWL_PX_PER_SEC/1000) % total);
   if (off < prevOff) carStart = now;          // leaderboard just repeated: launch the car
   prevOff = off;
   for (let k=0;k<2;k++){
     let cx = W - off + k*total;
     if (cx > W) cx -= 2*total;
-    for (const [str,c] of segs){ cx = c ? text(str,cx,24,c,null,3) : cx + str.length*12; }
+    for (const [str,c] of segs){ cx = c ? text(str,cx,24,c,null,3) : cx + tw(str,3)+3; }
   }
   if (carStart >= 0){
     const t = (now - carStart) / CAR_MS;
@@ -160,12 +162,16 @@ function draw(now){
   }
   hline(50, "#402000");
 
-  // --- Bottom flashing leaders (rows 25-31) ---
-  if (now - pageStart > PAGE_MS){ page=(page+1)%topOfDay.length; pageStart=now; }
-  const age = now - pageStart, flashing = age < 450 && Math.floor(age/150)%2===1;
-  if (!flashing){ const t = topOfDay[page];
-    const w = (t.lbl.length + 1 + t.who.length)*8 - 2;            // pixel width of the line
-    const nx = text(t.lbl, Math.floor((W - w)/2), 53, C.red, null, 2); text(t.who, nx+8, 53, C.green, null, 2); }
+  // --- Bottom: current race leader only (flashes when the lead changes) ---
+  const ld = racers[0];
+  if (ld.car !== lastLeader){ lastLeader = ld.car; leadChange = now; }
+  const lAge = now - leadChange, lFlash = lAge < 900 && Math.floor(lAge/150)%2===1;
+  if (!lFlash){
+    const lbl = "P1", who = "#"+ld.car+" "+ld.name;
+    const w = tw(lbl+" "+who, 2);
+    const nx = text(lbl, Math.floor((W - w)/2), 53, C.red, null, 2);
+    text(who, nx+8, 53, C.green, null, 2);
+  }
 
   render(); requestAnimationFrame(draw);
 }
