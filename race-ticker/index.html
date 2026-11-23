@@ -50,6 +50,8 @@
   #bottom .p{background:var(--gold);color:#1a1300;border-radius:1vh;padding:.3vh 1.2vw}
   #bottom .who .n{color:var(--blue)}
   #bottom.flash{animation:flash .9s}
+  #bottom{position:relative}
+  #bottom .logo{position:absolute;right:1.5vw;top:50%;transform:translateY(-50%);height:70%;max-width:22vw;object-fit:contain;mix-blend-mode:lighten;border-radius:.6vh}
   @keyframes flash{0%,40%,80%{background:#2d2a12}20%,60%,100%{background:var(--panel)}}
 
   /* Winner */
@@ -87,6 +89,7 @@
 
   <footer id="bottom" class="card">
     <span class="tag">RACE LEADER</span><span class="p">P1</span><span class="who" id="leader"></span>
+    <img class="logo" src="faslaps.jpg" alt="FasLaps">
   </footer>
 
   <div id="winner"><div class="inner"><h1>WINNER</h1><div class="who" id="winWho"></div></div></div>
