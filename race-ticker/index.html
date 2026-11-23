@@ -12,7 +12,30 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden;
     font-family:"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif}
-  body{display:grid;grid-template-rows:auto 1fr auto;gap:1.2vh;padding:1.5vh 1.5vw}
+  /* Two swipeable pages */
+  #track{display:flex;width:200vw;height:100vh;transition:transform .5s cubic-bezier(.2,.8,.2,1);touch-action:pan-y;user-select:none}
+  #track.drag{transition:none}
+  .page{width:100vw;height:100vh;flex:none;display:grid;grid-template-rows:auto 1fr auto;gap:1.2vh;padding:1.5vh 1.5vw}
+  #dots{position:fixed;left:50%;bottom:.4vh;transform:translateX(-50%);display:flex;gap:.8vh;z-index:5}
+  #dots i{width:1vh;height:1vh;border-radius:50%;background:var(--line);cursor:pointer;transition:background .3s}
+  #dots i.on{background:var(--text)}
+  .hint{position:fixed;top:50%;transform:translateY(-50%);font-size:6vh;color:var(--muted);opacity:.35;z-index:4;cursor:pointer;padding:2vh .5vw;transition:opacity .3s}
+  .hint:hover{opacity:.8} #hintR{right:0} #hintL{left:0}
+  body.p2 #hintR, body:not(.p2) #hintL{opacity:0;pointer-events:none}
+
+  /* Upcoming races page */
+  #upGrid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:1.4vh 1vw;padding:1.6vh 1.2vw;height:100%}
+  .rc{background:#1c2129;border:1px solid var(--line);border-radius:1.2vh;padding:1.4vh 1.2vw;display:flex;flex-direction:column;gap:1vh;min-height:0}
+  .rc.next{border-color:#2f6f3e;background:#15231a}
+  .rc .hd{display:flex;align-items:baseline;justify-content:space-between;gap:1vw}
+  .rc .no{font-size:min(4.2vh,2vw);font-weight:800} .rc .no span{color:var(--red)}
+  .rc .tm{font-size:min(3.6vh,1.7vw);font-weight:700;font-variant-numeric:tabular-nums}
+  .rc .meta{display:flex;justify-content:space-between;font-size:min(2vh,.95vw);font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+  .rc .meta .tag{color:var(--green)}
+  .rc ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:.5vh 1vw;flex:1;min-height:0}
+  .rc li{display:flex;align-items:center;gap:.6vw;font-size:min(2.4vh,1.15vw);font-weight:600;white-space:nowrap;overflow:hidden}
+  .rc li .ln{color:var(--muted);font-size:.8em;min-width:1.6em} .rc li .n{color:var(--blue);min-width:2.3em}
+  .rc li.open{color:#4b535d;font-style:italic}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:1.2vh;box-shadow:0 .6vh 2vh rgba(0,0,0,.35);overflow:hidden;position:relative}
 
   /* Top bar */
@@ -66,6 +89,8 @@
 </style>
 </head>
 <body>
+<div id="track">
+<section class="page" id="page1">
   <header id="top" class="card">
     <div class="race">RACE <span id="raceNo"></span></div>
     <div class="live"><i></i>LIVE</div>
@@ -81,6 +106,23 @@
     <span class="tag">RACE LEADER</span><span class="p">P1</span><span class="who" id="leader"></span>
     <img class="logo" src="faslaps.jpg" alt="FasLaps">
   </footer>
+</section>
+
+<section class="page" id="page2">
+  <header id="top2" class="card" style="display:flex;align-items:center;justify-content:space-between;padding:1.6vh 2.5vw;font-size:4.6vh;font-weight:700">
+    <div>UPCOMING RACES</div>
+    <div style="font-size:2.6vh;letter-spacing:.2em;color:var(--muted)">TODAY</div>
+    <div style="color:var(--muted);font-weight:600">NOW RACING <b style="color:var(--text)">RACE <span style="color:var(--red)" id="nowNo"></span></b></div>
+  </header>
+  <main class="card"><div id="upGrid"></div></main>
+  <footer class="card" id="bottom2" style="display:flex;align-items:center;justify-content:center;padding:1.8vh 2vw;font-size:2.8vh;font-weight:600;color:var(--muted);position:relative;letter-spacing:.05em">
+    <span>Check in at the counter 10 minutes before your race</span>
+    <img class="logo" src="faslaps.jpg" alt="FasLaps" style="position:absolute;right:1.5vw;top:50%;transform:translateY(-50%);height:70%;max-width:22vw;object-fit:contain;mix-blend-mode:lighten;border-radius:.6vh">
+  </footer>
+</section>
+</div>
+<div class="hint" id="hintR">&#8250;</div><div class="hint" id="hintL">&#8249;</div>
+<div id="dots"><i class="on"></i><i></i></div>
 
   <div id="winner"><div class="inner"><h1>WINNER</h1><div class="who" id="winWho"></div></div></div>
 
@@ -154,6 +196,46 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 resetRace(); requestAnimationFrame(frame);
+
+// ===== UPCOMING RACES (mock) =====
+const UPCOMING = [
+  { no: 8,  time: "7:45 PM", cls: "1/24 Open",      laps: "8 min", racers: [[1,7,"Maria Delgado"],[2,44,"Ryan Chen"],[3,19,"Chris Ford"],[4,5,"Jen Ruiz"],[5,77,"Mike Adams"],[6,23,"Pete Larson"],[7,12,"Jay Langa"],[8,2,"Sam Green"]] },
+  { no: 9,  time: "8:00 PM", cls: "Retro Stock",    laps: "6 min", racers: [[1,3,"Tom Walker"],[2,88,"Sanjay Patel"],[3,14,"Greg Hill"],[4,61,"Lisa Park"],[5,8,"Dave Nunez"],[6,40,"Ray Simmons"]] },
+  { no: 10, time: "8:15 PM", cls: "Group 12",       laps: "8 min", racers: [[1,21,"Kevin O'Brien"],[2,55,"Dai Nakamura"],[3,9,"Luis Morales"],[4,99,"Nick Bauer"],[5,11,"Carla Diaz"],[6,73,"Joe Russo"],[7,31,"Bob Huffman"]] },
+  { no: 11, time: "8:30 PM", cls: "Eurosport",      laps: "8 min", racers: [[1,66,"Anna Kowalski"],[2,12,"Jay Langa"],[3,27,"Matt Byrne"],[4,4,"Erin Cole"],[5,50,"Hank Moore"]] },
+  { no: 12, time: "8:45 PM", cls: "Hardbody",       laps: "6 min", racers: [[1,7,"Maria Delgado"],[2,3,"Tom Walker"],[3,88,"Sanjay Patel"],[4,18,"Vic Lopez"],[5,44,"Ryan Chen"],[6,36,"Ben Tate"],[7,21,"Kevin O'Brien"],[8,62,"Al Wong"]] },
+  { no: 13, time: "9:00 PM", cls: "1/24 Open Final", laps: "10 min", racers: [[1,12,"Jay Langa"],[2,7,"Maria Delgado"],[3,44,"Ryan Chen"],[4,55,"Dai Nakamura"]] },
+];
+const LANES = 8;
+$("nowNo").textContent = race.number;
+$("upGrid").innerHTML = UPCOMING.map((r,i)=>{
+  const rows = [];
+  for (let l=1; l<=LANES; l++){
+    const x = r.racers.find(q=>q[0]===l);
+    rows.push(x ? `<li><span class="ln">L${l}</span><span class="n">#${x[1]}</span>${short(x[2])}</li>`
+                : `<li class="open"><span class="ln">L${l}</span>Open</li>`);
+  }
+  return `<div class="rc${i===0?" next":""}">
+    <div class="hd"><div class="no">RACE <span>${r.no}</span></div><div class="tm">${r.time}</div></div>
+    <div class="meta"><span class="${i===0?"tag":""}">${i===0?"Up next &middot; ":""}${r.cls}</span><span>${r.racers.length}/${LANES} &middot; ${r.laps}</span></div>
+    <ul>${rows.join("")}</ul></div>`;
+}).join("");
+
+// ===== Swipe between pages (touch, mouse drag, arrow keys) =====
+let page = 0, sx = null, dx = 0;
+const track = $("track");
+function goTo(p){ page = Math.max(0, Math.min(1, p)); track.style.transform = `translateX(${-page*100}vw)`;
+  document.body.classList.toggle("p2", page===1);
+  document.querySelectorAll("#dots i").forEach((d,i)=>d.classList.toggle("on", i===page)); }
+track.addEventListener("pointerdown", e=>{ sx = e.clientX; dx = 0; track.classList.add("drag"); });
+window.addEventListener("pointermove", e=>{ if (sx===null) return; dx = e.clientX - sx;
+  track.style.transform = `translateX(calc(${-page*100}vw + ${dx}px))`; });
+window.addEventListener("pointerup", ()=>{ if (sx===null) return; track.classList.remove("drag");
+  const t = innerWidth*0.15; goTo(dx < -t ? page+1 : dx > t ? page-1 : page); sx = null; });
+window.addEventListener("keydown", e=>{ if (e.key==="ArrowRight") goTo(page+1); if (e.key==="ArrowLeft") goTo(page-1); });
+$("hintR").onclick = ()=>goTo(1); $("hintL").onclick = ()=>goTo(0);
+document.querySelectorAll("#dots i").forEach((d,i)=>d.onclick=()=>goTo(i));
+if (location.hash === "#upcoming") goTo(1);
 </script>
 </body>
 </html>
