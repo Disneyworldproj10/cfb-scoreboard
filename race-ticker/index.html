@@ -13,7 +13,7 @@
   html,body{height:100%;background:var(--bg);color:var(--text);overflow:hidden;
     font-family:"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif}
   /* Two swipeable pages */
-  #track{display:flex;width:200vw;height:100vh;transition:transform .5s cubic-bezier(.2,.8,.2,1);touch-action:pan-y;user-select:none}
+  #track{position:fixed;top:0;left:0;display:flex;width:300vw;height:100vh;transition:transform .5s cubic-bezier(.2,.8,.2,1);touch-action:pan-y;user-select:none}
   #track.drag{transition:none}
   .page{width:100vw;height:100vh;flex:none;display:grid;grid-template-rows:auto 1fr auto;gap:1.2vh;padding:1.5vh 1.5vw}
   #dots{position:fixed;left:50%;bottom:.4vh;transform:translateX(-50%);display:flex;gap:.8vh;z-index:5}
@@ -36,6 +36,23 @@
   .rc li{display:flex;align-items:center;gap:.6vw;font-size:min(2.4vh,1.15vw);font-weight:600;white-space:nowrap;overflow:hidden}
   .rc li .ln{color:var(--muted);font-size:.8em;min-width:1.6em} .rc li .n{color:var(--blue);min-width:2.3em}
   .rc li.open{color:#4b535d;font-style:italic}
+  .rc li[data-r]{cursor:pointer;border-radius:.6vh;padding:0 .3vw;margin:0 -.3vw;transition:background .2s}
+  .rc li[data-r]:hover,.rc li[data-r]:active{background:#2d333b}
+
+  /* Racer profile page */
+  body.p3 #dots, body.p3 .hint{opacity:0;pointer-events:none}
+  #prof{display:grid;grid-template-columns:1.25fr 1fr;gap:1.2vw;padding:1.6vh 1.2vw;height:100%;min-height:0}
+  .pcol{background:#1c2129;border:1px solid var(--line);border-radius:1.2vh;padding:1.6vh 1.4vw;display:flex;flex-direction:column;min-height:0}
+  .pcol h2{font-size:min(2.6vh,1.2vw);letter-spacing:.18em;color:var(--muted);font-weight:700;margin-bottom:1.2vh}
+  .ptab{width:100%;border-collapse:collapse;font-size:min(2.7vh,1.25vw);font-weight:600}
+  .ptab th{text-align:left;font-size:.7em;letter-spacing:.12em;color:var(--muted);font-weight:700;padding:0 0 .8vh;border-bottom:1px solid var(--line)}
+  .ptab td{padding:1vh 0;border-bottom:1px solid #232a33;white-space:nowrap}
+  .ptab td.c{color:var(--muted)} .ptab .rn span{color:var(--red)} .ptab td.t{font-variant-numeric:tabular-nums}
+  .plc{display:inline-flex;align-items:center;justify-content:center;min-width:4.6vh;height:4.6vh;border-radius:.8vh;background:#2d333b;color:var(--text);font-weight:800}
+  .plc.g{background:var(--gold);color:#1a1300} .plc.s{background:#c0c6cf;color:#111} .plc.b{background:#c98a4b;color:#1a0d00}
+  .plc.live{background:transparent;border:1px solid var(--red);color:var(--red);font-size:.75em;padding:0 .6vw}
+  .stats{display:flex;gap:2.4vw;font-size:2.4vh;color:var(--muted);font-weight:600} .stats b{color:var(--text);font-size:3.2vh;margin-right:.4vw}
+  .empty{color:var(--muted);font-style:italic;font-size:2.4vh;padding-top:1vh}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:1.2vh;box-shadow:0 .6vh 2vh rgba(0,0,0,.35);overflow:hidden;position:relative}
 
   /* Top bar */
@@ -117,6 +134,21 @@
   <main class="card"><div id="upGrid"></div></main>
   <footer class="card" id="bottom2" style="display:flex;align-items:center;justify-content:center;padding:1.8vh 2vw;font-size:2.8vh;font-weight:600;color:var(--muted);position:relative;letter-spacing:.05em">
     <span>Check in at the counter 10 minutes before your race</span>
+    <img class="logo" src="faslaps.jpg" alt="FasLaps" style="position:absolute;right:1.5vw;top:50%;transform:translateY(-50%);height:70%;max-width:22vw;object-fit:contain;mix-blend-mode:lighten;border-radius:.6vh">
+  </footer>
+</section>
+
+<section class="page" id="page3">
+  <header class="card" style="display:flex;align-items:center;justify-content:space-between;padding:1.6vh 2.5vw;font-size:4.6vh;font-weight:700">
+    <div><span id="pNum" style="color:var(--blue);margin-right:1.2vw"></span><span id="pName"></span></div>
+    <div class="stats" id="pStats"></div>
+  </header>
+  <main class="card"><div id="prof">
+    <div class="pcol"><h2>RACE RESULTS TODAY</h2><table class="ptab" id="pPast"></table></div>
+    <div class="pcol"><h2>SCHEDULED RACES</h2><table class="ptab" id="pNext"></table></div>
+  </div></main>
+  <footer class="card" style="display:flex;align-items:center;justify-content:center;padding:1.8vh 2vw;font-size:2.8vh;font-weight:600;color:var(--muted);position:relative;letter-spacing:.05em">
+    <span>&#8249;&nbsp; Swipe right to go back to the race</span>
     <img class="logo" src="faslaps.jpg" alt="FasLaps" style="position:absolute;right:1.5vw;top:50%;transform:translateY(-50%);height:70%;max-width:22vw;object-fit:contain;mix-blend-mode:lighten;border-radius:.6vh">
   </footer>
 </section>
@@ -212,7 +244,7 @@ $("upGrid").innerHTML = UPCOMING.map((r,i)=>{
   const rows = [];
   for (let l=1; l<=LANES; l++){
     const x = r.racers.find(q=>q[0]===l);
-    rows.push(x ? `<li><span class="ln">L${l}</span><span class="n">#${x[1]}</span>${short(x[2])}</li>`
+    rows.push(x ? `<li data-r="${x[2]}"><span class="ln">L${l}</span><span class="n">#${x[1]}</span>${short(x[2])}</li>`
                 : `<li class="open"><span class="ln">L${l}</span>Open</li>`);
   }
   return `<div class="rc${i===0?" next":""}">
@@ -221,18 +253,62 @@ $("upGrid").innerHTML = UPCOMING.map((r,i)=>{
     <ul>${rows.join("")}</ul></div>`;
 }).join("");
 
+// ===== RACE HISTORY (mock: races 1-6 already run today) =====
+const POOL = {};
+ROSTER.forEach(r=>POOL[r.name]=r.car); UPCOMING.forEach(u=>u.racers.forEach(x=>POOL[x[2]]=x[1]));
+const NAMES = Object.keys(POOL);
+let seed = 24; const rnd = ()=>((seed = (seed*16807) % 2147483647) / 2147483647);
+const shuffle = a => { a=[...a]; for(let i=a.length-1;i>0;i--){ const j=Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const PAST_CLASSES = ["Retro Stock","1/24 Open","Group 12","Hardbody","Eurosport","1/24 Open Semi"];
+const PAST = PAST_CLASSES.map((cls,i)=>{
+  const h = 6 + Math.floor(i*15/60), m = (i*15)%60;
+  const field = shuffle(NAMES).slice(0, 6 + Math.floor(rnd()*3));
+  if (i%2===0 && !field.includes("Jay Langa")) field[field.length-1] = "Jay Langa";
+  return { no: i+1, time: `${h}:${String(m).padStart(2,"0")} PM`, cls,
+    results: shuffle(field).map((n,k)=>({ name:n, place:k+1, lap:(4.6 + k*0.07 + rnd()*0.15).toFixed(3) })) };
+});
+
+function showRacer(name){
+  const car = POOL[name];
+  $("pNum").textContent = "#"+car; $("pName").textContent = name;
+  const past = PAST.flatMap(r=>r.results.filter(x=>x.name===name).map(x=>({...r, ...x, field:r.results.length})));
+  const live = racers.find(r=>r.name===name);
+  const next = UPCOMING.flatMap(u=>u.racers.filter(x=>x[2]===name).map(x=>({...u, lane:x[0]})));
+  const medal = p => p===1?"g":p===2?"s":p===3?"b":"";
+  let rows = past.map(r=>`<tr><td class="rn">RACE <span>${r.no}</span></td><td class="t">${r.time}</td><td class="c">${r.cls}</td>
+    <td><span class="plc ${medal(r.place)}">${r.place}</span> <span class="c" style="font-size:.75em">of ${r.field}</span></td><td class="t c">${r.lap}s</td></tr>`);
+  if (live){ const pos = standings().findIndex(r=>r.name===name)+1;
+    rows.push(`<tr><td class="rn">RACE <span>${race.number}</span></td><td class="t">${race.start}</td><td class="c">Now racing</td>
+    <td><span class="plc live">LIVE P${pos}</span></td><td class="t c">&ndash;</td></tr>`); }
+  $("pPast").innerHTML = rows.length ? `<tr><th>RACE</th><th>TIME</th><th>CLASS</th><th>PLACE</th><th>BEST LAP</th></tr>${rows.join("")}`
+                                     : `<tr><td class="empty">No races yet today</td></tr>`;
+  $("pNext").innerHTML = next.length ? `<tr><th>RACE</th><th>TIME</th><th>CLASS</th><th>LANE</th></tr>` + next.map(u=>
+    `<tr><td class="rn">RACE <span>${u.no}</span></td><td class="t">${u.time}</td><td class="c">${u.cls}</td><td>L${u.lane}</td></tr>`).join("")
+                                     : `<tr><td class="empty">No more races scheduled today</td></tr>`;
+  const wins = past.filter(r=>r.place===1).length, best = past.length ? Math.min(...past.map(r=>r.place)) : null;
+  const fast = past.length ? Math.min(...past.map(r=>+r.lap)).toFixed(3)+"s" : "&ndash;";
+  $("pStats").innerHTML = `<span><b>${past.length}</b>RACE${past.length===1?"":"S"}</span><span><b>${wins}</b>WIN${wins===1?"":"S"}</span><span><b>${best?"P"+best:"&ndash;"}</b>BEST</span><span><b>${fast}</b>FAST LAP</span>`;
+  goTo(2);
+}
+
 // ===== Swipe between pages (touch, mouse drag, arrow keys) =====
-let page = 0, sx = null, dx = 0;
+// Page 0 = live race, 1 = upcoming races, 2 = racer profile (opened by tapping a name)
+let page = 0, sx = null, dx = 0, dragged = false;
 const track = $("track");
-function goTo(p){ page = Math.max(0, Math.min(1, p)); track.style.transform = `translateX(${-page*100}vw)`;
-  document.body.classList.toggle("p2", page===1);
+function goTo(p){ page = Math.max(0, Math.min(2, p)); track.style.transform = `translateX(${-page*100}vw)`;
+  document.body.classList.toggle("p2", page===1); document.body.classList.toggle("p3", page===2);
   document.querySelectorAll("#dots i").forEach((d,i)=>d.classList.toggle("on", i===page)); }
-track.addEventListener("pointerdown", e=>{ sx = e.clientX; dx = 0; track.classList.add("drag"); });
-window.addEventListener("pointermove", e=>{ if (sx===null) return; dx = e.clientX - sx;
+function swipe(dir){ // dir +1 = swipe left (next), -1 = swipe right (back)
+  if (page===2) goTo(dir<0 ? 0 : 2);        // profile: swipe right goes back to the main race page
+  else goTo(Math.min(1, page+dir)); }
+track.addEventListener("pointerdown", e=>{ sx = e.clientX; dx = 0; dragged = false; track.classList.add("drag"); });
+window.addEventListener("pointermove", e=>{ if (sx===null) return; dx = e.clientX - sx; if (Math.abs(dx)>10) dragged = true;
+  if (page===1 && dx<0) dx = dx/4; if (page===2 && dx<0) dx = dx/4;   // resist swiping past the last page
   track.style.transform = `translateX(calc(${-page*100}vw + ${dx}px))`; });
 window.addEventListener("pointerup", ()=>{ if (sx===null) return; track.classList.remove("drag");
-  const t = innerWidth*0.15; goTo(dx < -t ? page+1 : dx > t ? page-1 : page); sx = null; });
-window.addEventListener("keydown", e=>{ if (e.key==="ArrowRight") goTo(page+1); if (e.key==="ArrowLeft") goTo(page-1); });
+  const t = innerWidth*0.15; if (dx < -t) swipe(1); else if (dx > t) swipe(-1); else goTo(page); sx = null; });
+window.addEventListener("keydown", e=>{ if (e.key==="ArrowRight") swipe(1); if (e.key==="ArrowLeft") swipe(-1); });
+$("upGrid").addEventListener("click", e=>{ if (dragged) return; const li = e.target.closest("li[data-r]"); if (li) showRacer(li.dataset.r); });
 $("hintR").onclick = ()=>goTo(1); $("hintL").onclick = ()=>goTo(0);
 document.querySelectorAll("#dots i").forEach((d,i)=>d.onclick=()=>goTo(i));
 if (location.hash === "#upcoming") goTo(1);
