@@ -39,10 +39,10 @@
   .gap{font-size:min(2.8vh,1.3vw);font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
 
   /* Slot car zoom */
-  #car{position:absolute;top:50%;left:0;height:30vh;transform:translate(110vw,-50%);z-index:3;pointer-events:none;
+  #car{position:absolute;top:50%;left:0;height:22vh;filter:drop-shadow(0 1.5vh 1.5vh rgba(0,0,0,.6));transform:translate(110vw,-50%);z-index:3;pointer-events:none;
     filter:drop-shadow(0 1vh 1.2vh rgba(0,0,0,.6))}
   #car.go{animation:zoom .7s cubic-bezier(.3,0,.7,1) forwards}
-  @keyframes zoom{from{transform:translate(110vw,-50%)}to{transform:translate(-90vh,-50%)}}
+  @keyframes zoom{from{transform:translate(110vw,-50%)}to{transform:translate(-100vw,-50%)}}
 
   /* Bottom: current leader */
   #bottom{display:flex;align-items:center;justify-content:center;gap:2vw;padding:1.8vh 2vw;font-size:5vh;font-weight:700}
@@ -74,17 +74,7 @@
 
   <main id="middle" class="card">
     <div id="grid"></div>
-    <svg id="car" viewBox="0 0 220 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <g stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".7">
-        <line x1="160" y1="22" x2="215" y2="22"/><line x1="172" y1="38" x2="220" y2="38"/><line x1="165" y1="54" x2="205" y2="54"/>
-      </g>
-      <path d="M8 52 Q10 40 30 36 L58 30 Q72 14 98 14 L118 14 Q132 16 140 30 L150 34 Q158 38 156 52 Z" fill="#e5484d"/>
-      <path d="M66 31 Q78 19 98 19 L112 19 Q122 20 128 31 Z" fill="#9bd4ff"/>
-      <rect x="10" y="42" width="144" height="5" fill="#f5c542"/>
-      <circle cx="40" cy="56" r="12" fill="#222"/><circle cx="40" cy="56" r="5" fill="#bbb"/>
-      <circle cx="126" cy="56" r="12" fill="#222"/><circle cx="126" cy="56" r="5" fill="#bbb"/>
-      <text x="88" y="40" font-family="Arial" font-weight="900" font-size="12" fill="#fff" text-anchor="middle">12</text>
-    </svg>
+    <img id="car" src="slotcar.png" alt="" aria-hidden="true">
   </main>
 
   <footer id="bottom" class="card">
